@@ -48,19 +48,11 @@ MainWindow::MainWindow(QWidget *parent)
   connect(ui->backgroundColourButton, &QPushButton::released, this,
           &MainWindow::onBackgroundColourClicked);
   connect(ui->lightSlider, &QSlider::valueChanged, this,
-<<<<<<< HEAD
           &MainWindow::on_lightSlider_valueChanged);
-  connect(ui->shrinkFilterCheckBox, &QCheckBox::toggled, this,
-          &MainWindow::onShrinkFilterToggled);
-  connect(ui->clipFilterCheckBox, &QCheckBox::toggled, this,
-          &MainWindow::onClipFilterToggled);
-=======
-          &MainWindow::onLightIntensityChanged);
   //connect(ui->shrinkFilterCheckBox, &QCheckBox::toggled, this,
       //    &MainWindow::onShrinkFilterToggled);
  // connect(ui->clipFilterCheckBox, &QCheckBox::toggled, this,
     //      &MainWindow::onClipFilterToggled);
->>>>>>> Toni
   connect(ui->visibilityCheckBox, &QCheckBox::toggled, this,
           &MainWindow::onVisibilityToggled);
   connect(ui->shrinkSlider, &QSlider::valueChanged, this, 
