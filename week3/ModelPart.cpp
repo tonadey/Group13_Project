@@ -104,47 +104,79 @@ void ModelPart::setVisible(bool isVisible) {
 bool ModelPart::visible() { return isVisible; }
 
 void ModelPart::setClipFilter(bool enabled) {
-  m_clipFilter = enabled;
-  refreshFilters();
+    m_clipFilter = enabled;
+    refreshFilters(); // Crucial: Reconnect the pipes
 }
 
 void ModelPart::setShrinkFilter(bool enabled) {
-  m_shrinkFilter = enabled;
-  refreshFilters();
+    m_shrinkFilter = enabled;
+    refreshFilters(); // Crucial: Reconnect the pipes
 }
+
+/*void ModelPart::refreshFilters() {
+    if (!reader) return;
+
+    // Start with the reader output
+    vtkAlgorithmOutput* lastStage = reader->GetOutputPort();
+
+    // Stage 1: Shrink (if enabled)
+    if (m_shrinkFilter) {
+        if (!shrinkFilter) shrinkFilter = vtkSmartPointer<vtkShrinkFilter>::New();
+        shrinkFilter->SetInputConnection(lastStage);
+        lastStage = shrinkFilter->GetOutputPort();
+    }
+
+    // Stage 2: Clip (if enabled)
+    if (m_clipFilter) {
+        if (!clipFilter) {
+            clipFilter = vtkSmartPointer<vtkClipDataSet>::New();
+            clipPlane = vtkSmartPointer<vtkPlane>::New();
+            clipPlane->SetNormal(1.0, 0.0, 0.0);
+            clipFilter->SetClipFunction(clipPlane);
+        }
+        clipFilter->SetInputConnection(lastStage);
+        lastStage = clipFilter->GetOutputPort();
+    }
+
+    // Connect the final stage to the mapper
+    if (!mapper) mapper = vtkSmartPointer<vtkDataSetMapper>::New();
+    mapper->SetInputConnection(lastStage);
+
+    if (actor) actor->SetMapper(mapper);
+}*/
+
 
 void ModelPart::refreshFilters() {
-  if (!reader || !mapper)
-    return;
+    if (!reader) return;
 
-  /* Build a chain: reader -> [shrink] -> [clip] -> mapper.
-   * vtkDataSetMapper accepts any vtkDataSet, so the unstructured grid
-   * output of clip/shrink can feed it directly. */
-  vtkAlgorithmOutput *currentOutput = reader->GetOutputPort();
+    vtkAlgorithm* lastFilter = reader;
 
-  if (m_shrinkFilter) {
-    if (!shrinkFilter)
-      shrinkFilter = vtkSmartPointer<vtkShrinkFilter>::New();
-    shrinkFilter->SetInputConnection(currentOutput);
-    shrinkFilter->SetShrinkFactor(0.8);
-    currentOutput = shrinkFilter->GetOutputPort();
-  }
-
-  if (m_clipFilter) {
-    if (!clipPlane) {
-      clipPlane = vtkSmartPointer<vtkPlane>::New();
-      clipPlane->SetOrigin(0.0, 0.0, 0.0);
-      clipPlane->SetNormal(-1.0, 0.0, 0.0);
+    // Shrink logic
+    if (m_shrinkFilter) {
+        if (!shrinkFilter) shrinkFilter = vtkSmartPointer<vtkShrinkFilter>::New();
+        shrinkFilter->SetInputConnection(lastFilter->GetOutputPort());
+        shrinkFilter->SetShrinkFactor(m_shrinkFactor);
+        lastFilter = shrinkFilter;
     }
-    if (!clipFilter)
-      clipFilter = vtkSmartPointer<vtkClipDataSet>::New();
-    clipFilter->SetInputConnection(currentOutput);
-    clipFilter->SetClipFunction(clipPlane);
-    currentOutput = clipFilter->GetOutputPort();
-  }
 
-  mapper->SetInputConnection(currentOutput);
+    // Clipping logic
+    if (m_clipFilter) {
+        if (!clipFilter) {
+            clipFilter = vtkSmartPointer<vtkClipDataSet>::New();
+            clipPlane = vtkSmartPointer<vtkPlane>::New();
+            clipFilter->SetClipFunction(clipPlane);
+        }
+        clipPlane->SetOrigin(m_clipX, 0, 0);
+        clipPlane->SetNormal(1, 0, 0); // Slices along the X axis
+        clipFilter->SetInputConnection(lastFilter->GetOutputPort());
+        lastFilter = clipFilter;
+    }
+
+    if (mapper) {
+        mapper->SetInputConnection(lastFilter->GetOutputPort());
+    }
 }
+
 
 void ModelPart::loadSTL(QString fileName) {
   QFileInfo fileInfo(fileName);
@@ -191,4 +223,16 @@ vtkSmartPointer<vtkActor> ModelPart::getNewActor() {
   }
 
   return newActor;
+}
+
+void ModelPart::setShrinkFactor(double factor) {
+    m_shrinkFactor = factor;
+    m_shrinkFilter = (factor < 1.0); // Enable filter if we are shrinking
+    refreshFilters();
+}
+
+void ModelPart::applyClipping(double actualX) {
+    m_clipX = actualX;
+    m_clipFilter = true; // Enable clipping when slider moves
+    refreshFilters();
 }
