@@ -113,7 +113,7 @@ void ModelPart::setShrinkFilter(bool enabled) {
     refreshFilters(); // Crucial: Reconnect the pipes
 }
 
-void ModelPart::refreshFilters() {
+/*void ModelPart::refreshFilters() {
     if (!reader) return;
 
     // Start with the reader output
@@ -143,8 +143,39 @@ void ModelPart::refreshFilters() {
     mapper->SetInputConnection(lastStage);
 
     if (actor) actor->SetMapper(mapper);
-}
+}*/
 
+
+void ModelPart::refreshFilters() {
+    if (!reader) return;
+
+    vtkAlgorithm* lastFilter = reader;
+
+    // Shrink logic
+    if (m_shrinkFilter) {
+        if (!shrinkFilter) shrinkFilter = vtkSmartPointer<vtkShrinkFilter>::New();
+        shrinkFilter->SetInputConnection(lastFilter->GetOutputPort());
+        shrinkFilter->SetShrinkFactor(m_shrinkFactor);
+        lastFilter = shrinkFilter;
+    }
+
+    // Clipping logic
+    if (m_clipFilter) {
+        if (!clipFilter) {
+            clipFilter = vtkSmartPointer<vtkClipDataSet>::New();
+            clipPlane = vtkSmartPointer<vtkPlane>::New();
+            clipFilter->SetClipFunction(clipPlane);
+        }
+        clipPlane->SetOrigin(m_clipX, 0, 0);
+        clipPlane->SetNormal(1, 0, 0); // Slices along the X axis
+        clipFilter->SetInputConnection(lastFilter->GetOutputPort());
+        lastFilter = clipFilter;
+    }
+
+    if (mapper) {
+        mapper->SetInputConnection(lastFilter->GetOutputPort());
+    }
+}
 
 
 void ModelPart::loadSTL(QString fileName) {
@@ -195,16 +226,13 @@ vtkSmartPointer<vtkActor> ModelPart::getNewActor() {
 }
 
 void ModelPart::setShrinkFactor(double factor) {
-    if (shrinkFilter) {
-        shrinkFilter->SetShrinkFactor(factor);
-        shrinkFilter->Update();
-    }
+    m_shrinkFactor = factor;
+    m_shrinkFilter = (factor < 1.0); // Enable filter if we are shrinking
+    refreshFilters();
 }
 
 void ModelPart::applyClipping(double actualX) {
-    if (clipPlane && clipFilter) {
-        clipPlane->SetOrigin(actualX, 0.0, 0.0);
-        clipPlane->Modified();
-        clipFilter->Update();
-    }
+    m_clipX = actualX;
+    m_clipFilter = true; // Enable clipping when slider moves
+    refreshFilters();
 }

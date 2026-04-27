@@ -60,7 +60,7 @@ public:
   bool getShrinkFilter() const { return m_shrinkFilter; }
   void setShrinkFactor(double factor);
   void applyClipping(double actualX);
- 
+  double getShrinkFactor() const { return m_shrinkFactor; }
 
 
   /** Rebuild the mapper input chain (reader -> [filters] -> mapper)
@@ -83,6 +83,9 @@ private:
 
   bool m_clipFilter;
   bool m_shrinkFilter;
+
+  double m_shrinkFactor = 1.0;
+  double m_clipX = 0.0;
 
   vtkSmartPointer<vtkSTLReader> reader;
   vtkSmartPointer<vtkShrinkFilter> shrinkFilter;
