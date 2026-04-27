@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1200</width>
-    <height>780</height>
+    <height>812</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -114,17 +114,13 @@
            <string>View Controls</string>
           </property>
           <layout class="QGridLayout" name="gridLayout_view">
-           <item row="0" column="0">
-            <widget class="QPushButton" name="resetViewButton">
+           <item row="2" column="2">
+            <widget class="QCheckBox" name="visibilityCheckBox">
              <property name="text">
-              <string>Reset Model View</string>
+              <string>Visible</string>
              </property>
-            </widget>
-           </item>
-           <item row="0" column="1">
-            <widget class="QPushButton" name="changeColourButton">
-             <property name="text">
-              <string>Change Model Colour</string>
+             <property name="checked">
+              <bool>true</bool>
              </property>
             </widget>
            </item>
@@ -158,27 +154,51 @@
              </property>
             </widget>
            </item>
-           <item row="2" column="0">
-            <widget class="QCheckBox" name="shrinkFilterCheckBox">
+           <item row="0" column="0">
+            <widget class="QPushButton" name="resetViewButton">
              <property name="text">
-              <string>Apply shrink filter</string>
+              <string>Reset Model View</string>
              </property>
             </widget>
            </item>
            <item row="2" column="1">
-            <widget class="QCheckBox" name="clipFilterCheckBox">
-             <property name="text">
-              <string>Apply clip filter</string>
+            <widget class="QSlider" name="shrinkSlider">
+             <property name="maximum">
+              <number>100</number>
+             </property>
+             <property name="orientation">
+              <enum>Qt::Orientation::Horizontal</enum>
              </property>
             </widget>
            </item>
-           <item row="2" column="2">
-            <widget class="QCheckBox" name="visibilityCheckBox">
+           <item row="0" column="1">
+            <widget class="QPushButton" name="changeColourButton">
              <property name="text">
-              <string>Visible</string>
+              <string>Change Model Colour</string>
              </property>
-             <property name="checked">
-              <bool>true</bool>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="label">
+             <property name="text">
+              <string>Shrink Intensity:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1">
+            <widget class="QSlider" name="clipSlider">
+             <property name="maximum">
+              <number>100</number>
+             </property>
+             <property name="orientation">
+              <enum>Qt::Orientation::Horizontal</enum>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="0">
+            <widget class="QLabel" name="label_2">
+             <property name="text">
+              <string>Clipping Intensity</string>
              </property>
             </widget>
            </item>
@@ -248,7 +268,7 @@
      <x>0</x>
      <y>0</y>
      <width>1200</width>
-     <height>22</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -420,19 +440,19 @@
    </property>
   </action>
   <action name="actionToggle_Shrink">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
    <property name="text">
     <string>Toggle Shrink Filter</string>
    </property>
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
   </action>
   <action name="actionToggle_Clip">
-   <property name="text">
-    <string>Toggle Clip Filter</string>
-   </property>
    <property name="checkable">
     <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Toggle Clip Filter</string>
    </property>
   </action>
   <action name="actionStart_VR">
