@@ -46,8 +46,7 @@ public slots:
   /* View menu */
   void on_actionReset_View_triggered();
   void on_actionChange_Background_triggered();
-  void on_actionToggle_Shrink_triggered();
-  void on_actionToggle_Clip_triggered();
+ 
 
   /* VR menu / toolbar */
   void on_actionStart_VR_triggered();
@@ -61,10 +60,10 @@ public slots:
   void onChangeColourClicked();
   void onBackgroundColourClicked();
   void onLightIntensityChanged(int value);
-  void onShrinkFilterToggled(bool checked);
-  void onClipFilterToggled(bool checked);
   void onVisibilityToggled(bool checked);
   void onSyncVRClicked();
+  void onShrinkSliderChanged(int value);
+  void onClipSliderChanged(int value);
 
 private:
   Ui::MainWindow *ui;

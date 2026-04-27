@@ -58,6 +58,10 @@ public:
   bool getClipFilter() const { return m_clipFilter; }
   void setShrinkFilter(bool enabled);
   bool getShrinkFilter() const { return m_shrinkFilter; }
+  void setShrinkFactor(double factor);
+  void applyClipping(double actualX);
+  double getShrinkFactor() const { return m_shrinkFactor; }
+
 
   /** Rebuild the mapper input chain (reader -> [filters] -> mapper)
    *  according to the current filter flags. */
@@ -80,15 +84,15 @@ private:
   bool m_clipFilter;
   bool m_shrinkFilter;
 
-  vtkSmartPointer<vtkSTLReader> reader;
-  vtkSmartPointer<vtkDataSetMapper> mapper;
-  vtkSmartPointer<vtkActor> actor;
+  double m_shrinkFactor = 1.0;
+  double m_clipX = 0.0;
 
-  /* Filter pipeline objects, kept as members so they remain alive while
-   * the mapper references them. */
+  vtkSmartPointer<vtkSTLReader> reader;
   vtkSmartPointer<vtkShrinkFilter> shrinkFilter;
   vtkSmartPointer<vtkClipDataSet> clipFilter;
   vtkSmartPointer<vtkPlane> clipPlane;
+  vtkSmartPointer<vtkDataSetMapper> mapper;
+  vtkSmartPointer<vtkActor> actor;
 };
 
 #endif

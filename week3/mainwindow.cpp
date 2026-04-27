@@ -48,13 +48,25 @@ MainWindow::MainWindow(QWidget *parent)
   connect(ui->backgroundColourButton, &QPushButton::released, this,
           &MainWindow::onBackgroundColourClicked);
   connect(ui->lightSlider, &QSlider::valueChanged, this,
+<<<<<<< HEAD
           &MainWindow::on_lightSlider_valueChanged);
   connect(ui->shrinkFilterCheckBox, &QCheckBox::toggled, this,
           &MainWindow::onShrinkFilterToggled);
   connect(ui->clipFilterCheckBox, &QCheckBox::toggled, this,
           &MainWindow::onClipFilterToggled);
+=======
+          &MainWindow::onLightIntensityChanged);
+  //connect(ui->shrinkFilterCheckBox, &QCheckBox::toggled, this,
+      //    &MainWindow::onShrinkFilterToggled);
+ // connect(ui->clipFilterCheckBox, &QCheckBox::toggled, this,
+    //      &MainWindow::onClipFilterToggled);
+>>>>>>> Toni
   connect(ui->visibilityCheckBox, &QCheckBox::toggled, this,
           &MainWindow::onVisibilityToggled);
+  connect(ui->shrinkSlider, &QSlider::valueChanged, this, 
+      &MainWindow::onShrinkSliderChanged);
+  connect(ui->clipSlider, &QSlider::valueChanged, this, 
+      &MainWindow::onClipSliderChanged);
 
   /* VR buttons */
   connect(ui->startVRButton, &QPushButton::released, this,
@@ -118,15 +130,19 @@ void MainWindow::handleTreeClicked() {
 
   /* Reflect selected item's filter/visibility state in the right-panel
    * controls */
-  ui->shrinkFilterCheckBox->blockSignals(true);
-  ui->clipFilterCheckBox->blockSignals(true);
+  //ui->shrinkFilterCheckBox->blockSignals(true);
+  //ui->clipFilterCheckBox->blockSignals(true);
   ui->visibilityCheckBox->blockSignals(true);
-  ui->shrinkFilterCheckBox->setChecked(selectedPart->getShrinkFilter());
-  ui->clipFilterCheckBox->setChecked(selectedPart->getClipFilter());
+  //ui->shrinkFilterCheckBox->setChecked(selectedPart->getShrinkFilter());
+  //ui->clipFilterCheckBox->setChecked(selectedPart->getClipFilter());
   ui->visibilityCheckBox->setChecked(selectedPart->visible());
-  ui->shrinkFilterCheckBox->blockSignals(false);
-  ui->clipFilterCheckBox->blockSignals(false);
+  //ui->shrinkFilterCheckBox->blockSignals(false);
+  //ui->clipFilterCheckBox->blockSignals(false);
   ui->visibilityCheckBox->blockSignals(false);
+  ui->shrinkSlider->blockSignals(true); // Prevent slider move from triggering logic
+  ui->clipSlider->blockSignals(true);
+  // Assuming shrink is 0.0-1.0 and clip is mapped 0-100
+  ui->shrinkSlider->setValue(selectedPart->getShrinkFactor() * 100);
 
   emit statusUpdateMessage(QString("Selected: ") + text, 0);
 }
@@ -393,7 +409,7 @@ void MainWindow::on_actionChange_Background_triggered() {
   onBackgroundColourClicked();
 }
 
-void MainWindow::on_actionToggle_Shrink_triggered() {
+/*void MainWindow::on_actionToggle_Shrink_triggered() {
   bool on = ui->actionToggle_Shrink->isChecked();
   ui->shrinkFilterCheckBox->setChecked(on);
 }
@@ -401,7 +417,7 @@ void MainWindow::on_actionToggle_Shrink_triggered() {
 void MainWindow::on_actionToggle_Clip_triggered() {
   bool on = ui->actionToggle_Clip->isChecked();
   ui->clipFilterCheckBox->setChecked(on);
-}
+}*/
 
 void MainWindow::on_actionStart_VR_triggered() {
   emit statusUpdateMessage(tr("Start VR: not yet implemented"), 0);
@@ -470,33 +486,7 @@ void MainWindow::onLightIntensityChanged(int value) {
       0);
 }
 
-void MainWindow::onShrinkFilterToggled(bool checked) {
-  QModelIndex index = ui->treeView->currentIndex();
-  if (!index.isValid()) {
-    emit statusUpdateMessage(
-        tr("Select an item before toggling the shrink filter."), 0);
-    return;
-  }
-  ModelPart *selectedPart = static_cast<ModelPart *>(index.internalPointer());
-  selectedPart->setShrinkFilter(checked);
-  renderWindow->Render();
-  emit statusUpdateMessage(
-      tr(checked ? "Shrink filter enabled" : "Shrink filter disabled"), 0);
-}
 
-void MainWindow::onClipFilterToggled(bool checked) {
-  QModelIndex index = ui->treeView->currentIndex();
-  if (!index.isValid()) {
-    emit statusUpdateMessage(
-        tr("Select an item before toggling the clip filter."), 0);
-    return;
-  }
-  ModelPart *selectedPart = static_cast<ModelPart *>(index.internalPointer());
-  selectedPart->setClipFilter(checked);
-  renderWindow->Render();
-  emit statusUpdateMessage(
-      tr(checked ? "Clip filter enabled" : "Clip filter disabled"), 0);
-}
 
 void MainWindow::onVisibilityToggled(bool checked) {
   QModelIndex index = ui->treeView->currentIndex();
@@ -519,6 +509,7 @@ void MainWindow::onVisibilityToggled(bool checked) {
 void MainWindow::onSyncVRClicked() {
   emit statusUpdateMessage(tr("Sync GUI to VR: not yet implemented"), 0);
 }
+
 
 void MainWindow::setupLighting()
 {
@@ -544,3 +535,38 @@ void MainWindow::on_lightSlider_valueChanged(int value)
     emit statusUpdateMessage(
         QString("Light intensity: %1").arg(value), 0);
 }
+
+
+// Ensure the MainWindow:: prefix is present!
+void MainWindow::onShrinkSliderChanged(int value) {
+    QModelIndex index = ui->treeView->currentIndex();
+    if (!index.isValid()) return;
+
+    ModelPart* selectedPart = static_cast<ModelPart*>(index.internalPointer());
+
+    // Slider 0   -> (100 - 0)   / 100 = 1.0 (No Shrink)
+     // Slider 100 -> (100 - 100) / 100 = 0.0 (Max Shrink)
+    double factor = (100.0 - value) / 100.0;
+    selectedPart->setShrinkFactor(factor);
+
+    renderWindow->Render(); // This will work now if MainWindow:: is used
+}
+
+void MainWindow::onClipSliderChanged(int value) {
+    QModelIndex index = ui->treeView->currentIndex();
+    if (!index.isValid()) return;
+
+    ModelPart* selectedPart = static_cast<ModelPart*>(index.internalPointer());
+    if (!selectedPart || !selectedPart->getActor()) return;
+
+    double bounds[6];
+    selectedPart->getActor()->GetBounds(bounds);
+
+    double minX = bounds[0];
+    double maxX = bounds[1];
+    double actualX = minX + (double(value) / 100.0) * (maxX - minX);
+
+    selectedPart->applyClipping(actualX);
+    renderWindow->Render();
+}
+
