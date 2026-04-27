@@ -48,7 +48,7 @@ MainWindow::MainWindow(QWidget *parent)
   connect(ui->backgroundColourButton, &QPushButton::released, this,
           &MainWindow::onBackgroundColourClicked);
   connect(ui->lightSlider, &QSlider::valueChanged, this,
-          &MainWindow::onLightIntensityChanged);
+          &MainWindow::on_lightSlider_valueChanged);
   connect(ui->shrinkFilterCheckBox, &QCheckBox::toggled, this,
           &MainWindow::onShrinkFilterToggled);
   connect(ui->clipFilterCheckBox, &QCheckBox::toggled, this,
@@ -88,6 +88,7 @@ MainWindow::MainWindow(QWidget *parent)
 
   renderer = vtkSmartPointer<vtkRenderer>::New();
   renderWindow->AddRenderer(renderer);
+  setupLighting();
 
   renderer->ResetCamera();
   renderer->GetActiveCamera()->Azimuth(30);
@@ -327,8 +328,14 @@ void MainWindow::updateRenderFromTree(const QModelIndex &index) {
   if (index.isValid()) {
     ModelPart *selectedPart = static_cast<ModelPart *>(index.internalPointer());
     if (selectedPart && selectedPart->getActor()) {
-      renderer->AddActor(selectedPart->getActor());
+        selectedPart->getActor()->GetProperty()->SetAmbient(0.3);
+        selectedPart->getActor()->GetProperty()->SetDiffuse(0.8);
+        selectedPart->getActor()->GetProperty()->SetSpecular(0.3);
+        selectedPart->getActor()->GetProperty()->SetSpecularPower(20);
+
+        renderer->AddActor(selectedPart->getActor());
     }
+
   }
 
   int rows = partList->rowCount(index);
@@ -511,4 +518,29 @@ void MainWindow::onVisibilityToggled(bool checked) {
 
 void MainWindow::onSyncVRClicked() {
   emit statusUpdateMessage(tr("Sync GUI to VR: not yet implemented"), 0);
+}
+
+void MainWindow::setupLighting()
+{
+    sceneLight = vtkSmartPointer<vtkLight>::New();
+
+    sceneLight->SetLightTypeToHeadlight();   // follows camera, easiest to test
+    sceneLight->SetIntensity(1.0);
+
+    renderer->AddLight(sceneLight);
+    renderer->SetAmbient(0.2, 0.2, 0.2);
+
+    renderWindow->Render();
+}
+
+void MainWindow::on_lightSlider_valueChanged(int value)
+{
+    double intensity = value / 100.0 * 1.2;
+    if (sceneLight)
+    {
+        sceneLight->SetIntensity(intensity);
+        renderWindow->Render();
+    }
+    emit statusUpdateMessage(
+        QString("Light intensity: %1").arg(value), 0);
 }

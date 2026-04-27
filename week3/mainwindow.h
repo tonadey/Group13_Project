@@ -8,6 +8,7 @@
 
 #include <vtkGenericOpenGLRenderWindow.h>
 #include <vtkRenderer.h>
+#include <vtkLight.h>
 #include <vtkSmartPointer.h>
 
 QT_BEGIN_NAMESPACE
@@ -68,9 +69,11 @@ public slots:
 private:
   Ui::MainWindow *ui;
   ModelPartList *partList;
-
+  void setupLighting();
+  void on_lightSlider_valueChanged(int value);
   vtkSmartPointer<vtkRenderer> renderer;
   vtkSmartPointer<vtkGenericOpenGLRenderWindow> renderWindow;
+  vtkSmartPointer<vtkLight> sceneLight;
 
   void updateRender();
   void updateRenderFromTree(const QModelIndex &index);
