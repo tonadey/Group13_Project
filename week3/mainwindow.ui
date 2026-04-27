@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1200</width>
-    <height>780</height>
+    <height>812</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -248,7 +248,7 @@
      <x>0</x>
      <y>0</y>
      <width>1200</width>
-     <height>22</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -420,19 +420,19 @@
    </property>
   </action>
   <action name="actionToggle_Shrink">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
    <property name="text">
     <string>Toggle Shrink Filter</string>
    </property>
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
   </action>
   <action name="actionToggle_Clip">
-   <property name="text">
-    <string>Toggle Clip Filter</string>
-   </property>
    <property name="checkable">
     <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Toggle Clip Filter</string>
    </property>
   </action>
   <action name="actionStart_VR">
