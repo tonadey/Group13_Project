@@ -171,6 +171,7 @@ void ModelPart::loadSTL(QString fileName) {
   if (!actor)
     actor = vtkSmartPointer<vtkActor>::New();
   actor->SetMapper(mapper);
+  actor->GetBounds(originalBounds);
   actor->GetProperty()->SetColor(m_R / 255.0, m_G / 255.0, m_B / 255.0);
   actor->SetVisibility(isVisible);
 
@@ -214,4 +215,11 @@ void ModelPart::applyClipping(double actualX) {
 
     // 2. Re-run the filter pipeline to show the new cut
     refreshFilters();
+}
+
+void ModelPart::getOriginalBounds(double bounds[6]) const
+{
+    for (int i = 0; i < 6; i++) {
+        bounds[i] = originalBounds[i];
+    }
 }

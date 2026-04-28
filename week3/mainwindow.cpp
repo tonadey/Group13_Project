@@ -139,7 +139,7 @@ void MainWindow::handleTreeClicked() {
     // 4. Update Clip Slider (The Mapping Fix)
     ui->clipSlider->blockSignals(true);
     double bounds[6];
-    selectedPart->getActor()->GetBounds(bounds);
+    selectedPart->getOriginalBounds(bounds);
     double minX = bounds[0];
     double maxX = bounds[1];
 
@@ -557,7 +557,7 @@ void MainWindow::onClipSliderChanged(int value) {
 
     // 1. Get the physical dimensions of this specific part
     double bounds[6];
-    selectedPart->getActor()->GetBounds(bounds);
+    selectedPart->getOriginalBounds(bounds);
     double minX = bounds[0];
     double maxX = bounds[1];
 

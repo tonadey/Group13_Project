@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\tonad\test\Group13_Project\week3\CMakeFiles\57871084007d3ca2ba1f90b9ac29e0f3\generate.stamp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{868FD3BB-4C66-3842-8A62-3CE9858CBB8F}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
