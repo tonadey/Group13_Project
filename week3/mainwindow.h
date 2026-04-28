@@ -50,6 +50,8 @@ public slots:
   void on_actionItem_Options_triggered();
   void on_actionAdd_Item_triggered();
   void on_actionRemove_Item_triggered();
+  void on_actionChange_Colour_triggered();
+  void on_actionToggle_Visibility_triggered();
 
   /* View menu */
   void on_actionReset_View_triggered();
@@ -60,6 +62,8 @@ public slots:
   /* VR menu / toolbar */
   void on_actionStart_VR_triggered();
   void on_actionStop_VR_triggered();
+  void on_actionSync_VR_triggered();
+  void on_actionToggle_VR_Rotation_triggered();
 
   /* Help */
   void on_actionAbout_triggered();

@@ -17,6 +17,7 @@ find_package(VTK REQUIRED
     RenderingOpenGL2
     RenderingAnnotation
     IOGeometry
+    IOImage
     InteractionStyle
     InteractionWidgets
     GUISupportQt
@@ -104,4 +105,13 @@ add_custom_command(TARGET VRBindings PRE_BUILD
     COMMAND ${CMAKE_COMMAND} -E
     copy_directory ${CMAKE_SOURCE_DIR}/vrbindings ${CMAKE_BINARY_DIR}/
 )
+
+# Copy skybox HDRI(s) next to the exe so the VR scene can find them at runtime
+if(EXISTS ${CMAKE_SOURCE_DIR}/skybox)
+    add_custom_command(TARGET ws6 POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/skybox $<TARGET_FILE_DIR:ws6>/skybox
+        COMMENT "Copying skybox HDRIs next to the executable"
+    )
+endif()
 

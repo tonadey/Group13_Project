@@ -15,9 +15,13 @@
 
 #include <QCoreApplication>
 #include <QDebug>
+#include <QDir>
+#include <QFileInfo>
 #include <QMutexLocker>
 
 #include <vtkCamera.h>
+#include <vtkHDRReader.h>
+#include <vtkImageFlip.h>
 #include <vtkLight.h>
 #include <vtkOpenVRCamera.h>
 #include <vtkOpenVRRenderWindow.h>
@@ -26,6 +30,8 @@
 #include <vtkPlaneSource.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkProperty.h>
+#include <vtkSkybox.h>
+#include <vtkTexture.h>
 
 #include <openvr.h>
 
@@ -160,10 +166,71 @@ void VRRenderThread::run() {
    * like nothing is loaded. The reference does NOT call them - we follow
    * suit. */
   renderer = vtkSmartPointer<vtkOpenVRRenderer>::New();
-  renderer->SetBackground(0.1, 0.1, 0.15);
+  renderer->SetBackground(0.1, 0.1, 0.15); /* fallback if skybox load fails */
 
-  /* A simple headlight so models are still visible if the team's lighting
-   * controls are not yet wired up to vtkLight. */
+  /* --- SkyBox + Image-Based Lighting (PDF: realistic scenery via SkyBox) ---
+   * Loads an equirectangular HDRI from `<exeDir>/skybox/garage_2k.hdr` and
+   * feeds it into both a vtkSkybox actor (so the user sees a real garage
+   * around them in VR) and the renderer's environment texture (so metal
+   * parts pick up reflections of that garage instead of a flat colour).
+   *
+   * The HDR file ships next to the exe via a CMake POST_BUILD step. If
+   * it can't be found we fall back to the solid-colour background above
+   * rather than aborting - VR should still launch on a fresh checkout. */
+  QString skyDir = QCoreApplication::applicationDirPath() + "/skybox";
+  QString skyFile = skyDir + "/garage_2k.hdr";
+  if (!QFileInfo::exists(skyFile)) {
+    /* Fallback: any .hdr in the skybox dir. Lets the team swap HDRIs
+     * (e.g. autoshop_01, workshop) without recompiling. */
+    QStringList candidates =
+        QDir(skyDir).entryList(QStringList{"*.hdr", "*.HDR"}, QDir::Files);
+    if (!candidates.isEmpty())
+      skyFile = skyDir + "/" + candidates.first();
+  }
+
+  /* Skybox actor is held at function scope so the CLEAR_SCENE handler in
+   * the render loop can re-add it after RemoveAllViewProps wipes the
+   * scene during a GUI-triggered Sync VR. */
+  vtkSmartPointer<vtkSkybox> skybox;
+
+  if (QFileInfo::exists(skyFile)) {
+    auto hdr = vtkSmartPointer<vtkHDRReader>::New();
+    hdr->SetFileName(skyFile.toUtf8().constData());
+    hdr->Update();
+
+    /* vtkHDRReader returns the image upside-down relative to what
+     * vtkSkybox expects; flipping on Y aligns the horizon. */
+    auto flip = vtkSmartPointer<vtkImageFlip>::New();
+    flip->SetInputConnection(hdr->GetOutputPort());
+    flip->SetFilteredAxis(1);
+
+    auto envTex = vtkSmartPointer<vtkTexture>::New();
+    envTex->SetColorModeToDirectScalars();
+    envTex->MipmapOn();
+    envTex->InterpolateOn();
+    envTex->SetInputConnection(flip->GetOutputPort());
+
+    skybox = vtkSmartPointer<vtkSkybox>::New();
+    skybox->SetTexture(envTex);
+    skybox->SetProjection(vtkSkybox::Sphere);
+    skybox->PickableOff();
+    renderer->AddActor(skybox);
+
+    /* Image-based lighting: metal/specular parts will now reflect the
+     * garage. Big visual upgrade for free, and a clear "own ideas"
+     * talking point for the viva. */
+    renderer->UseImageBasedLightingOn();
+    renderer->SetEnvironmentTexture(envTex);
+    renderer->UseSphericalHarmonicsOn();
+
+    qDebug() << "VR run(): loaded SkyBox HDRI from" << skyFile;
+  } else {
+    qWarning() << "VR run(): no HDRI found in" << skyDir
+               << "- falling back to solid background";
+  }
+
+  /* Headlight on top of IBL so the model is still well-lit even if the
+   * HDRI is on the dimmer side. */
   vtkSmartPointer<vtkLight> light = vtkSmartPointer<vtkLight>::New();
   light->SetLightTypeToHeadlight();
   light->SetIntensity(1.0);
@@ -252,10 +319,13 @@ void VRRenderThread::run() {
       QMutexLocker lock(&mutex);
 
       if (clearScene) {
-        /* Drop everything except the floor. RemoveAllViewProps is too
-         * coarse - we keep the floor by re-adding it. */
+        /* Drop everything except the floor + skybox. RemoveAllViewProps
+         * is too coarse - we keep the staging by re-adding the actors
+         * we built once at startup. */
         renderer->RemoveAllViewProps();
         renderer->AddActor(floorActor);
+        if (skybox)
+          renderer->AddActor(skybox);
         clearScene = false;
       }
 
@@ -298,6 +368,8 @@ void VRRenderThread::run() {
         while ((a = actorList->GetNextActor()) != nullptr) {
           if (a == floorActor.Get())
             continue; /* don't spin the ground */
+          if (skybox && a == skybox.Get())
+            continue; /* don't spin the world around the user */
           if (rx != 0.0)
             a->RotateX(rx);
           if (ry != 0.0)
