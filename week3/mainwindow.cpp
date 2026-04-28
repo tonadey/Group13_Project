@@ -564,7 +564,7 @@ void MainWindow::onClipSliderChanged(int value) {
     // 2. Map 0-100 to minX-maxX (The Mapping)
     double actualX = minX + (double(value) / 100.0) * (maxX - minX);
 
-    // 3. Apply it
+    // Apply it
     selectedPart->applyClipping(actualX);
     renderWindow->Render();
 }
