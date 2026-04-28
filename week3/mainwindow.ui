@@ -7,27 +7,112 @@
     <x>0</x>
     <y>0</y>
     <width>1200</width>
-    <height>812</height>
+    <height>780</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Group 13 - CAD Viewer</string>
   </property>
+  <property name="styleSheet">
+   <string notr="true">QGroupBox {
+    font-weight: bold;
+    border: 1px solid #b8b8b8;
+    border-radius: 4px;
+    margin-top: 7px;
+    padding: 4px 4px 3px 4px;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    left: 6px;
+    padding: 0 3px;
+}
+QPushButton {
+    padding: 2px 8px;
+    min-height: 18px;
+}
+QCheckBox { spacing: 4px; }
+QLabel { padding: 0; }
+QDoubleSpinBox, QSpinBox {
+    padding: 1px 2px;
+    min-height: 16px;
+}
+QSlider::groove:horizontal {
+    height: 4px;
+    background: #d0d0d0;
+    border-radius: 2px;
+}
+QSlider::handle:horizontal {
+    width: 11px;
+    margin: -4px 0;
+    background: #4a90d9;
+    border-radius: 5px;
+    border: 1px solid #2a70b9;
+}</string>
+  </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QHBoxLayout" name="horizontalLayout_main">
+    <property name="leftMargin">
+     <number>4</number>
+    </property>
+    <property name="topMargin">
+     <number>4</number>
+    </property>
+    <property name="rightMargin">
+     <number>4</number>
+    </property>
+    <property name="bottomMargin">
+     <number>4</number>
+    </property>
+    <property name="spacing">
+     <number>4</number>
+    </property>
     <item>
      <widget class="QSplitter" name="mainSplitter">
       <property name="orientation">
        <enum>Qt::Orientation::Horizontal</enum>
       </property>
+      <property name="handleWidth">
+       <number>6</number>
+      </property>
       <widget class="QWidget" name="leftPanel" native="true">
        <layout class="QVBoxLayout" name="verticalLayout_left">
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <property name="spacing">
+         <number>4</number>
+        </property>
         <item>
          <widget class="QGroupBox" name="treeGroupBox">
           <property name="title">
            <string>Model Parts</string>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_tree">
+           <property name="leftMargin">
+            <number>4</number>
+           </property>
+           <property name="topMargin">
+            <number>2</number>
+           </property>
+           <property name="rightMargin">
+            <number>4</number>
+           </property>
+           <property name="bottomMargin">
+            <number>2</number>
+           </property>
+           <property name="spacing">
+            <number>3</number>
+           </property>
            <item>
             <widget class="QTreeView" name="treeView">
              <property name="contextMenuPolicy">
@@ -37,6 +122,9 @@
            </item>
            <item>
             <layout class="QHBoxLayout" name="horizontalLayout_treeButtons">
+             <property name="spacing">
+              <number>3</number>
+             </property>
              <item>
               <widget class="QPushButton" name="addItemButton">
                <property name="text">
@@ -69,6 +157,21 @@
            <string>Load Models</string>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_load">
+           <property name="leftMargin">
+            <number>4</number>
+           </property>
+           <property name="topMargin">
+            <number>2</number>
+           </property>
+           <property name="rightMargin">
+            <number>4</number>
+           </property>
+           <property name="bottomMargin">
+            <number>2</number>
+           </property>
+           <property name="spacing">
+            <number>3</number>
+           </property>
            <item>
             <widget class="QPushButton" name="openFileButton">
              <property name="text">
@@ -98,6 +201,21 @@
       </widget>
       <widget class="QWidget" name="rightPanel" native="true">
        <layout class="QVBoxLayout" name="verticalLayout_right">
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <property name="spacing">
+         <number>4</number>
+        </property>
         <item>
          <widget class="QVTKOpenGLNativeWidget" name="vtkWidget" native="true">
           <property name="minimumSize">
@@ -114,13 +232,35 @@
            <string>View Controls</string>
           </property>
           <layout class="QGridLayout" name="gridLayout_view">
-           <item row="2" column="2">
-            <widget class="QCheckBox" name="visibilityCheckBox">
+           <property name="leftMargin">
+            <number>4</number>
+           </property>
+           <property name="topMargin">
+            <number>2</number>
+           </property>
+           <property name="rightMargin">
+            <number>4</number>
+           </property>
+           <property name="bottomMargin">
+            <number>2</number>
+           </property>
+           <property name="horizontalSpacing">
+            <number>4</number>
+           </property>
+           <property name="verticalSpacing">
+            <number>3</number>
+           </property>
+           <item row="0" column="0">
+            <widget class="QPushButton" name="resetViewButton">
              <property name="text">
-              <string>Visible</string>
+              <string>Reset Model View</string>
              </property>
-             <property name="checked">
-              <bool>true</bool>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QPushButton" name="changeColourButton">
+             <property name="text">
+              <string>Change Model Colour</string>
              </property>
             </widget>
            </item>
@@ -154,10 +294,10 @@
              </property>
             </widget>
            </item>
-           <item row="0" column="0">
-            <widget class="QPushButton" name="resetViewButton">
+           <item row="2" column="0">
+            <widget class="QLabel" name="shrinkLabel">
              <property name="text">
-              <string>Reset Model View</string>
+              <string>Shrink intensity:</string>
              </property>
             </widget>
            </item>
@@ -167,21 +307,14 @@
               <number>100</number>
              </property>
              <property name="orientation">
-              <enum>Qt::Orientation::Horizontal</enum>
+              <enum>Qt::Horizontal</enum>
              </property>
             </widget>
            </item>
-           <item row="0" column="1">
-            <widget class="QPushButton" name="changeColourButton">
+           <item row="3" column="0">
+            <widget class="QLabel" name="clipLabel">
              <property name="text">
-              <string>Change Model Colour</string>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="0">
-            <widget class="QLabel" name="label">
-             <property name="text">
-              <string>Shrink Intensity:</string>
+              <string>Clip position:</string>
              </property>
             </widget>
            </item>
@@ -191,14 +324,17 @@
               <number>100</number>
              </property>
              <property name="orientation">
-              <enum>Qt::Orientation::Horizontal</enum>
+              <enum>Qt::Horizontal</enum>
              </property>
             </widget>
            </item>
-           <item row="3" column="0">
-            <widget class="QLabel" name="label_2">
+           <item row="2" column="2">
+            <widget class="QCheckBox" name="visibilityCheckBox">
              <property name="text">
-              <string>Clipping Intensity</string>
+              <string>Visible</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
              </property>
             </widget>
            </item>
@@ -211,6 +347,21 @@
            <string>Virtual Reality</string>
           </property>
           <layout class="QHBoxLayout" name="horizontalLayout_vr">
+           <property name="leftMargin">
+            <number>4</number>
+           </property>
+           <property name="topMargin">
+            <number>2</number>
+           </property>
+           <property name="rightMargin">
+            <number>4</number>
+           </property>
+           <property name="bottomMargin">
+            <number>2</number>
+           </property>
+           <property name="spacing">
+            <number>4</number>
+           </property>
            <item>
             <widget class="QPushButton" name="startVRButton">
              <property name="text">
@@ -268,7 +419,7 @@
      <x>0</x>
      <y>0</y>
      <width>1200</width>
-     <height>25</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -440,19 +591,19 @@
    </property>
   </action>
   <action name="actionToggle_Shrink">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
    <property name="text">
     <string>Toggle Shrink Filter</string>
    </property>
-  </action>
-  <action name="actionToggle_Clip">
    <property name="checkable">
     <bool>true</bool>
    </property>
+  </action>
+  <action name="actionToggle_Clip">
    <property name="text">
     <string>Toggle Clip Filter</string>
+   </property>
+   <property name="checkable">
+    <bool>true</bool>
    </property>
   </action>
   <action name="actionStart_VR">
