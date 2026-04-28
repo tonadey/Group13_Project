@@ -42,6 +42,11 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), ui(new Ui::MainWindow), vrThread(nullptr) {
   ui->setupUi(this);
 
+  /* Snapshot the .ui-baked light stylesheet so applyTheme() can clear it
+   * for dark mode (widget-level styles outrank qApp ones) and restore it
+   * when switching back. */
+  originalStyleSheet = this->styleSheet();
+
   /* Use the bundled VR icon as the window/taskbar icon so the demo
    * doesn't show the generic Qt feather. */
   setWindowIcon(QIcon(":/Icons/icons/startVR.png"));
@@ -1244,19 +1249,57 @@ void MainWindow::applyTheme(bool enabled) {
   darkMode = enabled;
 
   if (enabled) {
+    /* Drop the .ui-baked light stylesheet from the QMainWindow itself.
+     * It cascades to every child and outranks qApp's stylesheet, so
+     * leaving it in place would keep the menu bar / buttons / sliders
+     * looking light even in night mode. */
+    this->setStyleSheet("");
+
     qApp->setStyleSheet(R"(
-      QMainWindow, QWidget {
+      QMainWindow, QWidget, QDialog {
         background-color: #202124;
         color: #e8eaed;
       }
 
-      QMenuBar, QMenu, QStatusBar, QToolBar {
+      QMenuBar {
+        background-color: #2b2d31;
+        color: #e8eaed;
+        border-bottom: 1px solid #3c4043;
+      }
+      QMenuBar::item {
+        background: transparent;
+        padding: 4px 10px;
+      }
+      QMenuBar::item:selected {
+        background-color: #3c4043;
+      }
+
+      QMenu {
+        background-color: #2b2d31;
+        color: #e8eaed;
+        border: 1px solid #3c4043;
+      }
+      QMenu::item:selected {
+        background-color: #4a90e2;
+        color: #ffffff;
+      }
+      QMenu::separator {
+        height: 1px;
+        background: #3c4043;
+        margin: 4px 8px;
+      }
+
+      QStatusBar {
         background-color: #2b2d31;
         color: #e8eaed;
       }
+      QStatusBar::item { border: none; }
 
-      QMenu::item:selected {
-        background-color: #3c4043;
+      QToolBar {
+        background-color: #2b2d31;
+        border-bottom: 1px solid #3c4043;
+        spacing: 2px;
+        padding: 2px;
       }
 
       QPushButton {
@@ -1264,15 +1307,20 @@ void MainWindow::applyTheme(bool enabled) {
         color: #e8eaed;
         border: 1px solid #5f6368;
         border-radius: 4px;
-        padding: 4px 8px;
+        padding: 4px 12px;
+        min-height: 22px;
       }
-
       QPushButton:hover {
         background-color: #4a4d52;
+        border-color: #4a90e2;
       }
-
       QPushButton:pressed {
         background-color: #5f6368;
+      }
+      QPushButton:disabled {
+        background-color: #2a2b2e;
+        color: #6b6f74;
+        border-color: #3c4043;
       }
 
       QTreeView, QTableView, QListView {
@@ -1280,7 +1328,10 @@ void MainWindow::applyTheme(bool enabled) {
         color: #e8eaed;
         alternate-background-color: #2b2d31;
         border: 1px solid #5f6368;
+        selection-background-color: #4a90e2;
+        selection-color: #ffffff;
       }
+      QTreeView::item { padding: 2px 0; }
 
       QHeaderView::section {
         background-color: #2b2d31;
@@ -1289,40 +1340,75 @@ void MainWindow::applyTheme(bool enabled) {
         padding: 4px;
       }
 
-      QLineEdit, QSpinBox, QDoubleSpinBox, QTextEdit, QPlainTextEdit {
+      QLineEdit, QSpinBox, QDoubleSpinBox, QTextEdit, QPlainTextEdit, QComboBox {
         background-color: #1f1f1f;
         color: #e8eaed;
         border: 1px solid #5f6368;
         selection-background-color: #4a90e2;
+        padding: 1px 2px;
       }
 
       QGroupBox {
-        border: 1px solid #5f6368;
-        margin-top: 8px;
+        font-weight: 600;
         color: #e8eaed;
+        border: 1px solid #5f6368;
+        border-radius: 6px;
+        margin-top: 9px;
+        padding: 8px 6px 5px 6px;
+        background-color: #2b2d31;
       }
-
       QGroupBox::title {
         subcontrol-origin: margin;
+        subcontrol-position: top left;
         left: 8px;
-        padding: 0px 4px;
+        padding: 0 5px;
+        color: #87bce7;
       }
 
       QSlider::groove:horizontal {
-        height: 6px;
+        height: 5px;
+        background: #5f6368;
+        border-radius: 2px;
+      }
+      QSlider::sub-page:horizontal {
+        background: #4a90e2;
+        border-radius: 2px;
+      }
+      QSlider::handle:horizontal {
+        background: #e8eaed;
+        width: 13px;
+        margin: -5px 0;
+        border: 1px solid #4a90e2;
+        border-radius: 6px;
+      }
+      QSlider::handle:horizontal:hover {
+        background: #87bce7;
+      }
+
+      QCheckBox, QRadioButton, QLabel {
+        color: #e8eaed;
+        background: transparent;
+      }
+
+      QScrollBar:vertical, QScrollBar:horizontal {
+        background: #2b2d31;
+        border: none;
+      }
+      QScrollBar::handle:vertical, QScrollBar::handle:horizontal {
         background: #5f6368;
         border-radius: 3px;
       }
-
-      QSlider::handle:horizontal {
-        background: #e8eaed;
-        width: 14px;
-        margin: -4px 0;
-        border-radius: 7px;
+      QScrollBar::handle:vertical:hover, QScrollBar::handle:horizontal:hover {
+        background: #7a7e84;
       }
+      QScrollBar::add-line, QScrollBar::sub-line { height: 0; width: 0; }
 
-      QCheckBox {
+      QSplitter::handle { background: #3c4043; }
+
+      QToolTip {
+        background-color: #2b2d31;
         color: #e8eaed;
+        border: 1px solid #5f6368;
       }
     )");
 
@@ -1335,7 +1421,10 @@ void MainWindow::applyTheme(bool enabled) {
     emit statusUpdateMessage(tr("Night mode enabled"), 0);
 
   } else {
+    /* Drop the global dark stylesheet, then put the original .ui light
+     * theme back on the QMainWindow so children re-inherit it. */
     qApp->setStyleSheet("");
+    this->setStyleSheet(originalStyleSheet);
 
     if (renderer) {
       renderer->SetBackground(0.74, 0.77, 0.82);
