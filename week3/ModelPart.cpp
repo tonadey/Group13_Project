@@ -214,6 +214,10 @@ bool ModelPart::loadSTL(QString fileName, QString *errorMsg) {
   if (!actor)
     actor = vtkSmartPointer<vtkActor>::New();
   actor->SetMapper(mapper);
+  /* Cache the unfiltered bounds so the clip slider can map 0..100 to
+   * the original X range, even after the shrink/clip filter changes
+   * the actor's runtime bounds. (From origin/Toni clip-fix.) */
+  actor->GetBounds(originalBounds);
   actor->GetProperty()->SetColor(m_R / 255.0, m_G / 255.0, m_B / 255.0);
   actor->SetVisibility(isVisible);
 
@@ -294,4 +298,9 @@ vtkSmartPointer<vtkActor> ModelPart::getNewActor() {
   newActor->SetVisibility(isVisible);
 
   return newActor;
+}
+
+void ModelPart::getOriginalBounds(double bounds[6]) const {
+  for (int i = 0; i < 6; ++i)
+    bounds[i] = originalBounds[i];
 }
