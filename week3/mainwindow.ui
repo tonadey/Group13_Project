@@ -14,41 +14,103 @@
    <string>Group 13 - CAD Viewer</string>
   </property>
   <property name="styleSheet">
-   <string notr="true">QGroupBox {
-    font-weight: bold;
-    border: 1px solid #b8b8b8;
-    border-radius: 4px;
-    margin-top: 7px;
-    padding: 4px 4px 3px 4px;
+   <string notr="true">QMainWindow {
+    background: #f4f5f7;
+}
+QGroupBox {
+    font-weight: 600;
+    color: #2a3142;
+    border: 1px solid #c5cad3;
+    border-radius: 6px;
+    margin-top: 9px;
+    padding: 8px 6px 5px 6px;
+    background: #fafbfc;
 }
 QGroupBox::title {
     subcontrol-origin: margin;
     subcontrol-position: top left;
-    left: 6px;
-    padding: 0 3px;
+    left: 8px;
+    padding: 0 5px;
+    color: #1f5fb4;
 }
 QPushButton {
-    padding: 2px 8px;
-    min-height: 18px;
+    padding: 4px 12px;
+    min-height: 22px;
+    border: 1px solid #b8bdc7;
+    border-radius: 4px;
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                stop:0 #ffffff, stop:1 #e8ecf2);
+    color: #1f2530;
 }
-QCheckBox { spacing: 4px; }
-QLabel { padding: 0; }
+QPushButton:hover {
+    border-color: #4a90d9;
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                stop:0 #ffffff, stop:1 #d6e4f5);
+}
+QPushButton:pressed {
+    background: #c2d4ec;
+}
+QPushButton:disabled {
+    color: #a0a4ad;
+    background: #ededed;
+}
+QCheckBox { spacing: 5px; }
+QLabel { padding: 0; color: #2a3142; }
+QTreeView {
+    border: 1px solid #c5cad3;
+    border-radius: 4px;
+    background: #ffffff;
+    alternate-background-color: #f5f7fa;
+    selection-background-color: #4a90d9;
+    selection-color: #ffffff;
+}
+QTreeView::item { padding: 2px 0; }
 QDoubleSpinBox, QSpinBox {
     padding: 1px 2px;
-    min-height: 16px;
+    min-height: 18px;
+    border: 1px solid #b8bdc7;
+    border-radius: 3px;
 }
 QSlider::groove:horizontal {
-    height: 4px;
-    background: #d0d0d0;
+    height: 5px;
+    background: #d0d4dc;
+    border-radius: 2px;
+}
+QSlider::sub-page:horizontal {
+    background: #4a90d9;
     border-radius: 2px;
 }
 QSlider::handle:horizontal {
-    width: 11px;
-    margin: -4px 0;
-    background: #4a90d9;
-    border-radius: 5px;
-    border: 1px solid #2a70b9;
-}</string>
+    width: 13px;
+    margin: -5px 0;
+    background: qradialgradient(cx:0.5, cy:0.5, radius:0.5,
+                                fx:0.5, fy:0.4,
+                                stop:0 #6aa9e0, stop:1 #2a70b9);
+    border-radius: 6px;
+    border: 1px solid #1f5fb4;
+}
+QSlider::handle:horizontal:hover {
+    background: qradialgradient(cx:0.5, cy:0.5, radius:0.5,
+                                fx:0.5, fy:0.4,
+                                stop:0 #87bce7, stop:1 #3a80c9);
+}
+QStatusBar {
+    background: #2a3142;
+    color: #e8ecf2;
+}
+QToolBar {
+    border-bottom: 1px solid #c5cad3;
+    background: #fafbfc;
+    spacing: 2px;
+    padding: 2px;
+}
+QMenuBar {
+    background: #fafbfc;
+    border-bottom: 1px solid #c5cad3;
+}
+QMenuBar::item:selected { background: #d6e4f5; }
+QMenu { background: #ffffff; border: 1px solid #c5cad3; }
+QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QHBoxLayout" name="horizontalLayout_main">
@@ -299,6 +361,9 @@ QSlider::handle:horizontal {
              <property name="text">
               <string>Shrink intensity:</string>
              </property>
+             <property name="toolTip">
+              <string>Shrink filter (vtkShrinkFilter): 0 = no shrink, 100 = max shrink. Per-part.</string>
+             </property>
             </widget>
            </item>
            <item row="2" column="1">
@@ -309,12 +374,18 @@ QSlider::handle:horizontal {
              <property name="orientation">
               <enum>Qt::Horizontal</enum>
              </property>
+             <property name="toolTip">
+              <string>Drag to shrink the selected part. Updates VR via Sync.</string>
+             </property>
             </widget>
            </item>
            <item row="3" column="0">
             <widget class="QLabel" name="clipLabel">
              <property name="text">
               <string>Clip position:</string>
+             </property>
+             <property name="toolTip">
+              <string>Clip plane along X axis (vtkClipDataSet). 0 = off, 100 = clip past max X. Per-part.</string>
              </property>
             </widget>
            </item>
@@ -326,6 +397,9 @@ QSlider::handle:horizontal {
              <property name="orientation">
               <enum>Qt::Horizontal</enum>
              </property>
+             <property name="toolTip">
+              <string>Drag to slice the selected part. Updates VR via Sync.</string>
+             </property>
             </widget>
            </item>
            <item row="2" column="2">
@@ -335,6 +409,9 @@ QSlider::handle:horizontal {
              </property>
              <property name="checked">
               <bool>true</bool>
+             </property>
+             <property name="toolTip">
+              <string>Show or hide the selected part in both views</string>
              </property>
             </widget>
            </item>
@@ -389,6 +466,22 @@ QSlider::handle:horizontal {
              <property name="text">
               <string>Sync GUI to VR</string>
              </property>
+             <property name="toolTip">
+              <string>Push current scene (filters, colours, visibility) into the running headset</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="vrRotateButton">
+             <property name="text">
+              <string>Rotate (R)</string>
+             </property>
+             <property name="toolTip">
+              <string>Spin the model around Y axis inside VR. Same as pressing R.</string>
+             </property>
+             <property name="checkable">
+              <bool>true</bool>
+             </property>
             </widget>
            </item>
            <item>
@@ -442,6 +535,8 @@ QSlider::handle:horizontal {
     <addaction name="actionRemove_Item"/>
     <addaction name="separator"/>
     <addaction name="actionItem_Options"/>
+    <addaction name="actionChange_Colour"/>
+    <addaction name="actionToggle_Visibility"/>
    </widget>
    <widget class="QMenu" name="menuView">
     <property name="title">
@@ -459,6 +554,9 @@ QSlider::handle:horizontal {
     </property>
     <addaction name="actionStart_VR"/>
     <addaction name="actionStop_VR"/>
+    <addaction name="separator"/>
+    <addaction name="actionSync_VR"/>
+    <addaction name="actionToggle_VR_Rotation"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -637,6 +735,41 @@ QSlider::handle:horizontal {
    </property>
    <property name="text">
     <string>About</string>
+   </property>
+  </action>
+  <action name="actionChange_Colour">
+   <property name="text">
+    <string>Change Colour...</string>
+   </property>
+   <property name="toolTip">
+    <string>Pick a colour for the selected part (works in VR via auto-sync)</string>
+   </property>
+  </action>
+  <action name="actionToggle_Visibility">
+   <property name="text">
+    <string>Toggle Visibility</string>
+   </property>
+   <property name="toolTip">
+    <string>Show or hide the selected part in both views</string>
+   </property>
+  </action>
+  <action name="actionToggle_VR_Rotation">
+   <property name="text">
+    <string>Toggle VR Rotation (R)</string>
+   </property>
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="toolTip">
+    <string>Spin the model around its Y axis inside the headset</string>
+   </property>
+  </action>
+  <action name="actionSync_VR">
+   <property name="text">
+    <string>Sync to VR</string>
+   </property>
+   <property name="toolTip">
+    <string>Push the current GUI scene (filters, colours, visibility) into the running VR session</string>
    </property>
   </action>
  </widget>
