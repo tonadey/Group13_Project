@@ -66,6 +66,14 @@ public:
   void setShrinkFactor(double factor);
   void applyClipping(double actualX);
   double getShrinkFactor() const { return m_shrinkFactor; }
+  double getClipX() const { return m_clipX; }
+
+  /** Bounds captured the moment the STL is loaded, before any clip /
+   *  shrink filter runs. The clip slider needs these so it can map
+   *  0..100 to a stable X range - the actor's runtime bounds shrink
+   *  as soon as the clip filter cuts the mesh, which would otherwise
+   *  cause the slider to lose travel after the first drag. */
+  void getOriginalBounds(double bounds[6]) const;
 
   /** Rebuild the mapper input chain (reader -> [filters] -> mapper)
    *  according to the current filter flags. */
@@ -98,6 +106,10 @@ private:
   /* Slider state from the merged main branch. */
   double m_shrinkFactor = 1.0;
   double m_clipX = 0.0;
+
+  /* Pre-filter bounds, captured in loadSTL so getOriginalBounds() can
+   * hand them to the clip slider. */
+  double originalBounds[6] = {0, 0, 0, 0, 0, 0};
 
   vtkSmartPointer<vtkSTLReader> reader;
   vtkSmartPointer<vtkDataSetMapper> mapper;

@@ -793,13 +793,26 @@ void MainWindow::onClipSliderChanged(int value) {
   if (!selectedPart || !selectedPart->getActor())
     return;
 
-  /* Map slider 0..100 to the actor's X bounds so the clip plane sweeps
-   * across the part regardless of model size. */
+  /* Use the ORIGINAL bounds (cached at load time), not the actor's current
+   * bounds: once the clip filter cuts away part of the geometry the runtime
+   * bounds shrink, so a second slider drag would map to a smaller range and
+   * the slider would gradually lose effective travel. Fix from origin/Toni. */
   double bounds[6];
-  selectedPart->getActor()->GetBounds(bounds);
+  selectedPart->getOriginalBounds(bounds);
   double minX = bounds[0];
   double maxX = bounds[1];
-  double actualX = minX + (double(value) / 100.0) * (maxX - minX);
+  double width = maxX - minX;
+
+  double actualX;
+  if (value == 0) {
+    /* Park the clip plane just outside the model on the -X side so nothing
+     * is cut. This lets the user "turn the clip off" by dragging the slider
+     * back to 0 without us having to actually disable m_clipFilter (which
+     * would require rebuilding the filter chain on every toggle). */
+    actualX = minX - 0.1 * width;
+  } else {
+    actualX = minX + (double(value) / 100.0) * width;
+  }
 
   selectedPart->applyClipping(actualX);
   renderWindow->Render();
