@@ -85,6 +85,7 @@ private:
   ModelPartList *partList;
 
   bool darkMode = false;
+  QString originalStyleSheet;
   void applyTheme(bool enabled);
 
   vtkSmartPointer<vtkRenderer> renderer;
