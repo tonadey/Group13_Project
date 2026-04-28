@@ -548,23 +548,35 @@ void MainWindow::onShrinkSliderChanged(int value) {
     renderWindow->Render(); // This will work now if MainWindow:: is used
 }
 
-void MainWindow::onClipSliderChanged(int value) {
+void MainWindow::onClipSliderChanged(int value)
+{
     QModelIndex index = ui->treeView->currentIndex();
     if (!index.isValid()) return;
 
     ModelPart* selectedPart = static_cast<ModelPart*>(index.internalPointer());
     if (!selectedPart || !selectedPart->getActor()) return;
 
-    // 1. Get the physical dimensions of this specific part
     double bounds[6];
-    selectedPart->getActor()->GetBounds(bounds);
+
+    // IMPORTANT:
+    // This should return the original unmodified model bounds,
+    // not the clipped actor bounds.
+    selectedPart->getOriginalBounds(bounds);
+
     double minX = bounds[0];
     double maxX = bounds[1];
+    double width = maxX - minX;
 
-    // 2. Map 0-100 to minX-maxX (The Mapping)
-    double actualX = minX + (double(value) / 100.0) * (maxX - minX);
+    double actualX;
 
-    // 3. Apply it
+    if (value == 0) {
+        actualX = minX - 0.1 * width;   // fully unclipped / behind model
+    }
+    else {
+        actualX = minX + (static_cast<double>(value) / 100.0) * width;
+    }
+
     selectedPart->applyClipping(actualX);
+
     renderWindow->Render();
 }
