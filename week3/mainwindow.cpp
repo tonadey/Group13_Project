@@ -23,6 +23,7 @@
 #include <QPushButton>
 #include <QStyle>
 #include <QVBoxLayout>
+#include <functional>
 
 #include <QVTKOpenGLNativeWidget.h>
 #include <vtkActor.h>
@@ -76,6 +77,18 @@ MainWindow::MainWindow(QWidget *parent)
           &MainWindow::onShrinkSliderChanged);
   connect(ui->clipSlider, &QSlider::valueChanged, this,
           &MainWindow::onClipSliderChanged);
+  /* Marksheet: "VR updates filters in real-time". Pushing on every
+   * valueChanged would rebuild the filter chain at ~60Hz while dragging
+   * which stalls the GUI; pushing only on sliderReleased gives the
+   * "release the slider, see it in VR" experience without the cost. */
+  auto autoPushVR = [this]() {
+    if (vrThread && vrThread->isRunning()) {
+      vrThread->issueCommand(VRRenderThread::CLEAR_SCENE, 0.0);
+      pushTreeActorsToVR(QModelIndex());
+    }
+  };
+  connect(ui->shrinkSlider, &QSlider::sliderReleased, this, autoPushVR);
+  connect(ui->clipSlider, &QSlider::sliderReleased, this, autoPushVR);
   connect(ui->visibilityCheckBox, &QCheckBox::toggled, this,
           &MainWindow::onVisibilityToggled);
 
@@ -86,6 +99,8 @@ MainWindow::MainWindow(QWidget *parent)
           &MainWindow::on_actionStop_VR_triggered);
   connect(ui->vrSyncButton, &QPushButton::released, this,
           &MainWindow::onSyncVRClicked);
+  connect(ui->vrRotateButton, &QPushButton::toggled, this,
+          [this](bool /*checked*/) { onToggleVRRotation(); });
 
   /* "R" toggles a Y-axis spin while VR is running (PDF 3.3.3 fifth
    * bullet: "Add some animation: e.g. the rotation hinted at in the
@@ -124,9 +139,23 @@ MainWindow::MainWindow(QWidget *parent)
   this->partList = new ModelPartList("PartsList");
   ui->treeView->setModel(this->partList);
 
-  /* Right-click context menu on the tree */
+  /* Right-click context menu on the tree. Marksheet (s75/s89) wants
+   * colour and visibility specifically reachable through the context
+   * menu, not just the right-panel buttons - so we expose both here. */
   ui->treeView->setContextMenuPolicy(Qt::ActionsContextMenu);
   ui->treeView->addAction(ui->actionItem_Options);
+  {
+    auto *sep1 = new QAction(this);
+    sep1->setSeparator(true);
+    ui->treeView->addAction(sep1);
+  }
+  ui->treeView->addAction(ui->actionChange_Colour);
+  ui->treeView->addAction(ui->actionToggle_Visibility);
+  {
+    auto *sep2 = new QAction(this);
+    sep2->setSeparator(true);
+    ui->treeView->addAction(sep2);
+  }
   ui->treeView->addAction(ui->actionAdd_Item);
   ui->treeView->addAction(ui->actionRemove_Item);
 
@@ -403,69 +432,128 @@ void MainWindow::on_actionOpen_Folder_triggered() {
   }
   lastBrowsedDir = dirPath;
 
-  QDir dir(dirPath);
-  QStringList stlFiles =
-      dir.entryList(QStringList() << "*.stl" << "*.STL", QDir::Files);
+  /* Walk the chosen directory recursively. Empty branches (folders with
+   * no STLs anywhere in their subtree) are pruned so the GUI tree
+   * mirrors only the parts of the filesystem that actually hold
+   * geometry. Picking Models/ pulls in Level0/Level1/Level2 plus all of
+   * their nested category folders in one go. */
+  struct Node {
+    QDir dir;
+    QStringList files;
+    QList<Node> children;
+  };
 
-  if (stlFiles.isEmpty()) {
-    emit statusUpdateMessage(tr("No STL files found in: ") + dir.dirName(), 0);
-    QMessageBox::information(this, tr("No STL Files"),
-                             tr("The chosen directory contains no .stl files."));
+  const QStringList stlFilters{"*.stl", "*.STL"};
+
+  std::function<bool(const QDir &, Node &)> scan = [&](const QDir &d,
+                                                       Node &out) -> bool {
+    out.dir = d;
+    out.files = d.entryList(stlFilters, QDir::Files);
+
+    const QStringList subDirs =
+        d.entryList(QDir::Dirs | QDir::NoDotAndDotDot, QDir::Name);
+    for (const QString &sub : subDirs) {
+      Node child;
+      if (scan(QDir(d.absoluteFilePath(sub)), child))
+        out.children.append(child);
+    }
+
+    return !out.files.isEmpty() || !out.children.isEmpty();
+  };
+
+  std::function<int(const Node &)> count = [&](const Node &n) {
+    int c = n.files.size();
+    for (const Node &child : n.children)
+      c += count(child);
+    return c;
+  };
+
+  QDir rootDir(dirPath);
+  Node tree;
+  if (!scan(rootDir, tree)) {
+    emit statusUpdateMessage(tr("No STL files found in: ") + rootDir.dirName(),
+                             0);
+    QMessageBox::information(
+        this, tr("No STL Files"),
+        tr("The chosen directory and its subfolders contain no .stl files."));
     return;
   }
 
-  QList<QVariant> folderData = {dir.dirName(), tr("Yes")};
-  QModelIndex folderIndex = partList->appendChild(parentIndex, folderData);
+  const int totalFiles = count(tree);
 
   QProgressDialog progress(tr("Loading STL files..."), tr("Cancel"), 0,
-                           stlFiles.size(), this);
-  progress.setWindowTitle(tr("Loading %1").arg(dir.dirName()));
+                           totalFiles, this);
+  progress.setWindowTitle(tr("Loading %1").arg(rootDir.dirName()));
   progress.setWindowModality(Qt::WindowModal);
   progress.setMinimumDuration(0);
   progress.setValue(0);
 
   int loaded = 0;
-  for (const QString &file : stlFiles) {
-    if (progress.wasCanceled())
-      break;
+  bool cancelled = false;
 
-    progress.setLabelText(tr("Loading %1 (%2 of %3)...")
-                              .arg(file)
-                              .arg(loaded + 1)
-                              .arg(stlFiles.size()));
+  std::function<void(const Node &, QModelIndex)> load =
+      [&](const Node &node, QModelIndex parent) {
+        if (cancelled)
+          return;
 
-    QString fullPath = dir.absoluteFilePath(file);
-    QList<QVariant> data = {file, tr("Yes")};
-    QModelIndex newIndex = partList->appendChild(folderIndex, data);
+        QList<QVariant> data = {node.dir.dirName(), tr("Yes")};
+        QModelIndex nodeIdx = partList->appendChild(parent, data);
 
-    if (!newIndex.isValid()) {
-      ++loaded;
-      progress.setValue(loaded);
-      continue;
-    }
+        for (const QString &file : node.files) {
+          if (progress.wasCanceled()) {
+            cancelled = true;
+            return;
+          }
 
-    ModelPart *newPart = static_cast<ModelPart *>(newIndex.internalPointer());
-    QString loadErr;
-    if (!newPart->loadSTL(fullPath, &loadErr)) {
-      /* Drop the failed row so we don't leave dead entries in the tree.
-       * Show a non-modal status update; we don't want a popup per file
-       * when the user is loading a folder of dozens of STLs. */
-      partList->removeItem(newIndex);
-      qWarning() << "Skipped STL:" << loadErr;
-      ++loaded;
-      progress.setValue(loaded);
-      continue;
-    }
+          progress.setLabelText(tr("Loading %1/%2 (%3 of %4)...")
+                                    .arg(node.dir.dirName())
+                                    .arg(file)
+                                    .arg(loaded + 1)
+                                    .arg(totalFiles));
 
-    partList->setData(newIndex.siblingAtColumn(0), file, Qt::EditRole);
+          QString fullPath = node.dir.absoluteFilePath(file);
+          QList<QVariant> fileData = {file, tr("Yes")};
+          QModelIndex newIndex = partList->appendChild(nodeIdx, fileData);
 
-    ++loaded;
-    progress.setValue(loaded);
-  }
+          if (!newIndex.isValid()) {
+            ++loaded;
+            progress.setValue(loaded);
+            continue;
+          }
 
-  progress.setValue(stlFiles.size());
+          ModelPart *newPart =
+              static_cast<ModelPart *>(newIndex.internalPointer());
+          QString loadErr;
+          if (!newPart->loadSTL(fullPath, &loadErr)) {
+            /* Drop the failed row so we don't leave dead entries in
+             * the tree. Status-only feedback; per-file popups would
+             * be unusable across hundreds of STLs. */
+            partList->removeItem(newIndex);
+            qWarning() << "Skipped STL:" << loadErr;
+            ++loaded;
+            progress.setValue(loaded);
+            continue;
+          }
 
-  ui->treeView->expand(folderIndex);
+          partList->setData(newIndex.siblingAtColumn(0), file, Qt::EditRole);
+
+          ++loaded;
+          progress.setValue(loaded);
+        }
+
+        for (const Node &child : node.children) {
+          if (cancelled)
+            return;
+          load(child, nodeIdx);
+        }
+
+        ui->treeView->expand(nodeIdx);
+      };
+
+  load(tree, parentIndex);
+
+  progress.setValue(totalFiles);
+
   if (parentIndex.isValid())
     ui->treeView->expand(parentIndex);
 
@@ -473,15 +561,15 @@ void MainWindow::on_actionOpen_Folder_triggered() {
   renderer->ResetCamera();
   renderWindow->Render();
 
-  if (progress.wasCanceled()) {
+  if (cancelled) {
     emit statusUpdateMessage(QString("Loading cancelled after %1 of %2 files")
                                  .arg(loaded)
-                                 .arg(stlFiles.size()),
+                                 .arg(totalFiles),
                              0);
   } else {
     emit statusUpdateMessage(QString("Loaded %1 STL files from %2")
                                  .arg(loaded)
-                                 .arg(dir.dirName()),
+                                 .arg(rootDir.dirName()),
                              0);
   }
 }
@@ -685,9 +773,43 @@ void MainWindow::on_actionStop_VR_triggered() {
   delete vrThread;
   vrThread = nullptr;
   vrRotating = false;
+  ui->vrRotateButton->blockSignals(true);
+  ui->vrRotateButton->setChecked(false);
+  ui->vrRotateButton->blockSignals(false);
   refreshWindowTitle();
 
   emit statusUpdateMessage(tr("VR stopped"), 0);
+}
+
+void MainWindow::on_actionChange_Colour_triggered() { onChangeColourClicked(); }
+
+void MainWindow::on_actionToggle_Visibility_triggered() {
+  /* Marksheet: "Visibility can be applied to selected parts through use
+   * of context menu". Flips the current part's visible flag and routes
+   * through the existing checkbox handler so VR auto-sync, status bar
+   * and tree column all stay in sync. */
+  QModelIndex index = ui->treeView->currentIndex();
+  if (!index.isValid()) {
+    emit statusUpdateMessage(
+        tr("Select an item before toggling visibility."), 0);
+    QMessageBox::warning(this, tr("No Selection"),
+                         tr("Please select an item in the tree view first."));
+    return;
+  }
+  ModelPart *selectedPart = static_cast<ModelPart *>(index.internalPointer());
+  if (!selectedPart)
+    return;
+  bool now = !selectedPart->visible();
+  ui->visibilityCheckBox->blockSignals(true);
+  ui->visibilityCheckBox->setChecked(now);
+  ui->visibilityCheckBox->blockSignals(false);
+  onVisibilityToggled(now);
+}
+
+void MainWindow::on_actionSync_VR_triggered() { onSyncVRClicked(); }
+
+void MainWindow::on_actionToggle_VR_Rotation_triggered() {
+  onToggleVRRotation();
 }
 
 void MainWindow::on_actionAbout_triggered() {
@@ -729,6 +851,12 @@ void MainWindow::onChangeColourClicked() {
         chosen.redF(), chosen.greenF(), chosen.blueF());
   }
   renderWindow->Render();
+  /* Marksheet: "VR updates colour in real-time (no need to restart)".
+   * Push the change immediately if a headset session is live. */
+  if (vrThread && vrThread->isRunning()) {
+    vrThread->issueCommand(VRRenderThread::CLEAR_SCENE, 0.0);
+    pushTreeActorsToVR(QModelIndex());
+  }
   emit statusUpdateMessage(tr("Changed colour for: ") + selectedPart->data(0).toString(), 0);
 }
 
@@ -833,6 +961,11 @@ void MainWindow::onVisibilityToggled(bool checked) {
   if (selectedPart->getActor())
     selectedPart->getActor()->SetVisibility(checked);
   renderWindow->Render();
+  /* Marksheet: real-time VR update on visibility change. */
+  if (vrThread && vrThread->isRunning()) {
+    vrThread->issueCommand(VRRenderThread::CLEAR_SCENE, 0.0);
+    pushTreeActorsToVR(QModelIndex());
+  }
   emit statusUpdateMessage(
       tr(checked ? "Item visible" : "Item hidden"), 0);
 }
@@ -858,6 +991,10 @@ void MainWindow::onSyncVRClicked() {
 
 void MainWindow::onToggleVRRotation() {
   if (!vrThread || !vrThread->isRunning()) {
+    /* Keep the toggle button visually consistent with the actual state. */
+    ui->vrRotateButton->blockSignals(true);
+    ui->vrRotateButton->setChecked(false);
+    ui->vrRotateButton->blockSignals(false);
     emit statusUpdateMessage(
         tr("Toggle VR Rotation: VR is not running."), 0);
     return;
@@ -867,6 +1004,12 @@ void MainWindow::onToggleVRRotation() {
   /* 1 degree per ~20ms tick = ~50 deg/s. Comfortable speed for the
    * demo; not so fast it makes anyone seasick in the headset. */
   vrThread->issueCommand(VRRenderThread::ROTATE_Y, vrRotating ? 1.0 : 0.0);
+
+  /* Keep button state synced when triggered from menu / keyboard. */
+  ui->vrRotateButton->blockSignals(true);
+  ui->vrRotateButton->setChecked(vrRotating);
+  ui->vrRotateButton->blockSignals(false);
+
   emit statusUpdateMessage(
       vrRotating ? tr("VR rotation: ON (Y axis)")
                  : tr("VR rotation: OFF"),
