@@ -84,6 +84,9 @@ private:
   Ui::MainWindow *ui;
   ModelPartList *partList;
 
+  bool darkMode = false;
+  void applyTheme(bool enabled);
+
   vtkSmartPointer<vtkRenderer> renderer;
   vtkSmartPointer<vtkGenericOpenGLRenderWindow> renderWindow;
 
