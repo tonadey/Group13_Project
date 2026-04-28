@@ -112,6 +112,10 @@ private:
    * hand them to the clip slider. */
   double originalBounds[6] = {0, 0, 0, 0, 0, 0};
 
+  /* Pre-filter bounds, captured in loadSTL so getOriginalBounds() can
+   * hand them to the clip slider. */
+  double originalBounds[6] = {0, 0, 0, 0, 0, 0};
+
   vtkSmartPointer<vtkSTLReader> reader;
   vtkSmartPointer<vtkDataSetMapper> mapper;
   vtkSmartPointer<vtkActor> actor;
