@@ -487,4 +487,22 @@ FodyWeavers.xsd
 *.sln.iml
 *.stl
 
+
+# Ignore the build and .qt folders at the root
+/.qt/
+/build/
+
+# Ignore the autogen folders inside subdirectories (like week3)
+*autogen/
+include_Debug/
+mocs_compilation_*.cpp
+autouic_*.stamp
+
+# Visual Studio Project files (keep CMakeLists.txt, but ignore these)
+*.vcxproj
+*.filters
+*.sln
+ZERO_CHECK.*
+ALL_BUILD.*
+
 # End of https://mrkandreev.name/snippets/gitignore-generator/#Qt,CMake,QtCreator,VisualStudio
