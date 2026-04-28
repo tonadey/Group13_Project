@@ -489,5 +489,9 @@ FodyWeavers.xsd
 
 # Extra
 build/
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+.qt/*
 
 # End of https://mrkandreev.name/snippets/gitignore-generator/#Qt,CMake,QtCreator,VisualStudio
