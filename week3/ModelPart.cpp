@@ -113,53 +113,22 @@ void ModelPart::setShrinkFilter(bool enabled) {
     refreshFilters(); // Crucial: Reconnect the pipes
 }
 
-/*void ModelPart::refreshFilters() {
-    if (!reader) return;
-
-    // Start with the reader output
-    vtkAlgorithmOutput* lastStage = reader->GetOutputPort();
-
-    // Stage 1: Shrink (if enabled)
-    if (m_shrinkFilter) {
-        if (!shrinkFilter) shrinkFilter = vtkSmartPointer<vtkShrinkFilter>::New();
-        shrinkFilter->SetInputConnection(lastStage);
-        lastStage = shrinkFilter->GetOutputPort();
-    }
-
-    // Stage 2: Clip (if enabled)
-    if (m_clipFilter) {
-        if (!clipFilter) {
-            clipFilter = vtkSmartPointer<vtkClipDataSet>::New();
-            clipPlane = vtkSmartPointer<vtkPlane>::New();
-            clipPlane->SetNormal(1.0, 0.0, 0.0);
-            clipFilter->SetClipFunction(clipPlane);
-        }
-        clipFilter->SetInputConnection(lastStage);
-        lastStage = clipFilter->GetOutputPort();
-    }
-
-    // Connect the final stage to the mapper
-    if (!mapper) mapper = vtkSmartPointer<vtkDataSetMapper>::New();
-    mapper->SetInputConnection(lastStage);
-
-    if (actor) actor->SetMapper(mapper);
-}*/
-
 
 void ModelPart::refreshFilters() {
     if (!reader) return;
 
-    vtkAlgorithm* lastFilter = reader;
+    // Start with the source data
+    vtkAlgorithmOutput* currentOutput = reader->GetOutputPort();
 
-    // Shrink logic
+    // 1. Shrink logic
     if (m_shrinkFilter) {
         if (!shrinkFilter) shrinkFilter = vtkSmartPointer<vtkShrinkFilter>::New();
-        shrinkFilter->SetInputConnection(lastFilter->GetOutputPort());
+        shrinkFilter->SetInputConnection(currentOutput);
         shrinkFilter->SetShrinkFactor(m_shrinkFactor);
-        lastFilter = shrinkFilter;
+        currentOutput = shrinkFilter->GetOutputPort();
     }
 
-    // Clipping logic
+    // 2. Clipping logic
     if (m_clipFilter) {
         if (!clipFilter) {
             clipFilter = vtkSmartPointer<vtkClipDataSet>::New();
@@ -167,13 +136,15 @@ void ModelPart::refreshFilters() {
             clipFilter->SetClipFunction(clipPlane);
         }
         clipPlane->SetOrigin(m_clipX, 0, 0);
-        clipPlane->SetNormal(1, 0, 0); // Slices along the X axis
-        clipFilter->SetInputConnection(lastFilter->GetOutputPort());
-        lastFilter = clipFilter;
+        clipPlane->SetNormal(1, 0, 0);
+        clipFilter->SetInputConnection(currentOutput);
+        currentOutput = clipFilter->GetOutputPort();
     }
 
+    // 3. Update the Mapper
     if (mapper) {
-        mapper->SetInputConnection(lastFilter->GetOutputPort());
+        // We connect the mapper to whatever the "final" output in the chain is
+        mapper->SetInputConnection(currentOutput);
     }
 }
 
@@ -233,6 +204,14 @@ void ModelPart::setShrinkFactor(double factor) {
 
 void ModelPart::applyClipping(double actualX) {
     m_clipX = actualX;
-    m_clipFilter = true; // Enable clipping when slider moves
+    m_clipFilter = true; // Ensure the filter is active
+
+    // 1. Move the physical plane to the new X coordinate
+    if (clipPlane) {
+        // SetOrigin(X, Y, Z) - we only care about moving the X position
+        clipPlane->SetOrigin(actualX, 0.0, 0.0);
+    }
+
+    // 2. Re-run the filter pipeline to show the new cut
     refreshFilters();
 }

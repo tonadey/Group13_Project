@@ -114,7 +114,7 @@ void MainWindow::handleTreeClicked() {
     if (!index.isValid()) return;
 
     ModelPart* selectedPart = static_cast<ModelPart*>(index.internalPointer());
-    if (!selectedPart) return;
+    if (!selectedPart || !selectedPart->getActor()) return;
 
     QString text = selectedPart->data(0).toString();
 
@@ -124,29 +124,35 @@ void MainWindow::handleTreeClicked() {
     ui->visibilityCheckBox->blockSignals(false);
 
     // 2. Update Shrink Slider
-    // Math: If factor is 1.0 (Normal), Slider should be 0.
-    // SliderValue = 100 - (Factor * 100)
     ui->shrinkSlider->blockSignals(true);
     int shrinkPos = 100 - static_cast<int>(selectedPart->getShrinkFactor() * 100);
     ui->shrinkSlider->setValue(shrinkPos);
     ui->shrinkSlider->blockSignals(false);
 
-    // 3. Update Clip Slider
-    // This is trickier because we need to know where the clip X is relative to the bounds
-    ui->clipSlider->blockSignals(true);
-    if (selectedPart->getActor()) {
-        double bounds[6];
-        selectedPart->getActor()->GetBounds(bounds);
-        double minX = bounds[0];
-        double maxX = bounds[1];
+    // 3. Update Light Slider (Individual Part Brightness)
+    ui->lightSlider->blockSignals(true);
+    // Sync with the actor's Ambient property (0.0 to 1.0 mapped to 0-100)
+    double ambient = selectedPart->getActor()->GetProperty()->GetAmbient();
+    ui->lightSlider->setValue(static_cast<int>(ambient * 100));
+    ui->lightSlider->blockSignals(false);
 
-        // Find the percentage of where the current clip position is between Min and Max
-        if (maxX != minX) {
-            // Need a getClipX() in ModelPart.h, or use the variable m_clipX
-            // For now, let's assume we map it back or default to 0
-            // int clipPos = ((currentClipX - minX) / (maxX - minX)) * 100;
-            // ui->clipSlider->setValue(clipPos);
-        }
+    // 4. Update Clip Slider (The Mapping Fix)
+    ui->clipSlider->blockSignals(true);
+    double bounds[6];
+    selectedPart->getActor()->GetBounds(bounds);
+    double minX = bounds[0];
+    double maxX = bounds[1];
+
+    if (maxX != minX) {
+        // We calculate what percentage of the way 'm_clipX' is through the model
+        double currentX = selectedPart->getClipX();
+        int clipPos = static_cast<int>(((currentX - minX) / (maxX - minX)) * 100.0);
+
+        // Ensure it stays within slider range
+        if (clipPos < 0) clipPos = 0;
+        if (clipPos > 100) clipPos = 100;
+
+        ui->clipSlider->setValue(clipPos);
     }
     ui->clipSlider->blockSignals(false);
 
@@ -486,9 +492,20 @@ void MainWindow::onBackgroundColourClicked() {
 }
 
 void MainWindow::onLightIntensityChanged(int value) {
-    emit statusUpdateMessage(
-        QString("Light intensity: %1 (not yet wired to a vtkLight)").arg(value),
-        0);
+    QModelIndex index = ui->treeView->currentIndex();
+    if (!index.isValid()) return;
+
+    ModelPart* selectedPart = static_cast<ModelPart*>(index.internalPointer());
+    if (!selectedPart || !selectedPart->getActor()) return;
+
+    // Convert 0-100 slider to 0.0-1.0
+    double intensity = value / 100.0;
+
+    // Set both to ensure the model actually gets darker/brighter
+    selectedPart->getActor()->GetProperty()->SetAmbient(intensity);
+    selectedPart->getActor()->GetProperty()->SetDiffuse(intensity);
+
+    renderWindow->Render();
 }
 
 
@@ -538,13 +555,16 @@ void MainWindow::onClipSliderChanged(int value) {
     ModelPart* selectedPart = static_cast<ModelPart*>(index.internalPointer());
     if (!selectedPart || !selectedPart->getActor()) return;
 
+    // 1. Get the physical dimensions of this specific part
     double bounds[6];
     selectedPart->getActor()->GetBounds(bounds);
-
     double minX = bounds[0];
     double maxX = bounds[1];
+
+    // 2. Map 0-100 to minX-maxX (The Mapping)
     double actualX = minX + (double(value) / 100.0) * (maxX - minX);
 
+    // 3. Apply it
     selectedPart->applyClipping(actualX);
     renderWindow->Render();
 }
