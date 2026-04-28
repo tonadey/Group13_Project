@@ -488,6 +488,6 @@ FodyWeavers.xsd
 *.stl
 
 # Extra
-build/*
+build/
 
 # End of https://mrkandreev.name/snippets/gitignore-generator/#Qt,CMake,QtCreator,VisualStudio
