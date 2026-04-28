@@ -105,6 +105,14 @@ MainWindow::MainWindow(QWidget *parent)
    * step (tree -> getNewActor -> addActorOffline -> drain) actually
    * happened. */
   QAction *diagAction = new QAction(tr("Show VR Diagnostics"), this);
+  QAction *darkModeAction = new QAction(tr("Night Mode"), this);
+  darkModeAction->setCheckable(true);
+  ui->menuView->addSeparator();
+  ui->menuView->addAction(darkModeAction);
+
+  connect(darkModeAction, &QAction::toggled, this, [this](bool checked) {
+    applyTheme(checked);
+  });
   diagAction->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_D));
   diagAction->setShortcutContext(Qt::ApplicationShortcut);
   addAction(diagAction);
@@ -733,8 +741,10 @@ void MainWindow::onChangeColourClicked() {
 }
 
 void MainWindow::onBackgroundColourClicked() {
+  QColor initial = darkMode ? QColor(20, 22, 28) : Qt::white;
+
   QColor chosen =
-      QColorDialog::getColor(Qt::white, this, tr("Choose Background Colour"));
+      QColorDialog::getColor(initial, this, tr("Choose Background Colour"));
   if (!chosen.isValid())
     return;
 
@@ -1086,4 +1096,114 @@ void MainWindow::showVRDiagnosticDialog(const QString &reason) {
   layout->addWidget(buttons);
 
   dlg.exec();
+}
+void MainWindow::applyTheme(bool enabled) {
+  darkMode = enabled;
+
+  if (enabled) {
+    qApp->setStyleSheet(R"(
+      QMainWindow, QWidget {
+        background-color: #202124;
+        color: #e8eaed;
+      }
+
+      QMenuBar, QMenu, QStatusBar, QToolBar {
+        background-color: #2b2d31;
+        color: #e8eaed;
+      }
+
+      QMenu::item:selected {
+        background-color: #3c4043;
+      }
+
+      QPushButton {
+        background-color: #3c4043;
+        color: #e8eaed;
+        border: 1px solid #5f6368;
+        border-radius: 4px;
+        padding: 4px 8px;
+      }
+
+      QPushButton:hover {
+        background-color: #4a4d52;
+      }
+
+      QPushButton:pressed {
+        background-color: #5f6368;
+      }
+
+      QTreeView, QTableView, QListView {
+        background-color: #1f1f1f;
+        color: #e8eaed;
+        alternate-background-color: #2b2d31;
+        border: 1px solid #5f6368;
+      }
+
+      QHeaderView::section {
+        background-color: #2b2d31;
+        color: #e8eaed;
+        border: 1px solid #5f6368;
+        padding: 4px;
+      }
+
+      QLineEdit, QSpinBox, QDoubleSpinBox, QTextEdit, QPlainTextEdit {
+        background-color: #1f1f1f;
+        color: #e8eaed;
+        border: 1px solid #5f6368;
+        selection-background-color: #4a90e2;
+      }
+
+      QGroupBox {
+        border: 1px solid #5f6368;
+        margin-top: 8px;
+        color: #e8eaed;
+      }
+
+      QGroupBox::title {
+        subcontrol-origin: margin;
+        left: 8px;
+        padding: 0px 4px;
+      }
+
+      QSlider::groove:horizontal {
+        height: 6px;
+        background: #5f6368;
+        border-radius: 3px;
+      }
+
+      QSlider::handle:horizontal {
+        background: #e8eaed;
+        width: 14px;
+        margin: -4px 0;
+        border-radius: 7px;
+      }
+
+      QCheckBox {
+        color: #e8eaed;
+      }
+    )");
+
+    if (renderer) {
+      renderer->SetBackground(0.05, 0.06, 0.08);
+      renderer->SetBackground2(0.12, 0.14, 0.18);
+      renderer->GradientBackgroundOn();
+    }
+
+    emit statusUpdateMessage(tr("Night mode enabled"), 0);
+
+  } else {
+    qApp->setStyleSheet("");
+
+    if (renderer) {
+      renderer->SetBackground(0.74, 0.77, 0.82);
+      renderer->SetBackground2(0.18, 0.22, 0.30);
+      renderer->GradientBackgroundOn();
+    }
+
+    emit statusUpdateMessage(tr("Night mode disabled"), 0);
+  }
+
+  if (renderWindow) {
+    renderWindow->Render();
+  }
 }
