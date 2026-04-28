@@ -58,17 +58,35 @@ public:
   bool getClipFilter() const { return m_clipFilter; }
   void setShrinkFilter(bool enabled);
   bool getShrinkFilter() const { return m_shrinkFilter; }
+
+  /** Continuous-slider filter controls (merged from main branch).
+   *  setShrinkFactor enables shrink iff factor < 1.0 and uses the value
+   *  as the vtkShrinkFilter factor; applyClipping enables clipping and
+   *  positions the clip plane at world-space x. */
   void setShrinkFactor(double factor);
   void applyClipping(double actualX);
   double getShrinkFactor() const { return m_shrinkFactor; }
   double getClipX() const { return m_clipX; }
+
+  /** Bounds captured the moment the STL is loaded, before any clip /
+   *  shrink filter runs. The clip slider needs these so it can map
+   *  0..100 to a stable X range - the actor's runtime bounds shrink
+   *  as soon as the clip filter cuts the mesh, which would otherwise
+   *  cause the slider to lose travel after the first drag. */
   void getOriginalBounds(double bounds[6]) const;
 
   /** Rebuild the mapper input chain (reader -> [filters] -> mapper)
    *  according to the current filter flags. */
   void refreshFilters();
 
-  void loadSTL(QString fileName);
+  /** Load an STL file. Returns true on success. On failure, *errorMsg
+   *  (if non-null) carries a human-readable reason so the GUI can tell
+   *  the user instead of silently leaving an empty actor in the tree. */
+  bool loadSTL(QString fileName, QString *errorMsg = nullptr);
+
+  /** Triangle count of the loaded mesh, or 0 if nothing has been loaded.
+   *  Used by the GUI to warn before pushing a huge scene into VR. */
+  vtkIdType getTriangleCount() const;
 
   vtkSmartPointer<vtkActor> getActor();
   vtkSmartPointer<vtkActor> getNewActor();
@@ -85,16 +103,23 @@ private:
   bool m_clipFilter;
   bool m_shrinkFilter;
 
+  /* Slider state from the merged main branch. */
   double m_shrinkFactor = 1.0;
   double m_clipX = 0.0;
-  double originalBounds[6];
+
+  /* Pre-filter bounds, captured in loadSTL so getOriginalBounds() can
+   * hand them to the clip slider. */
+  double originalBounds[6] = {0, 0, 0, 0, 0, 0};
 
   vtkSmartPointer<vtkSTLReader> reader;
+  vtkSmartPointer<vtkDataSetMapper> mapper;
+  vtkSmartPointer<vtkActor> actor;
+
+  /* Filter pipeline objects, kept as members so they remain alive while
+   * the mapper references them. */
   vtkSmartPointer<vtkShrinkFilter> shrinkFilter;
   vtkSmartPointer<vtkClipDataSet> clipFilter;
   vtkSmartPointer<vtkPlane> clipPlane;
-  vtkSmartPointer<vtkDataSetMapper> mapper;
-  vtkSmartPointer<vtkActor> actor;
 };
 
 #endif

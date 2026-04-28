@@ -7,27 +7,174 @@
     <x>0</x>
     <y>0</y>
     <width>1200</width>
-    <height>812</height>
+    <height>780</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Group 13 - CAD Viewer</string>
   </property>
+  <property name="styleSheet">
+   <string notr="true">QMainWindow {
+    background: #f4f5f7;
+}
+QGroupBox {
+    font-weight: 600;
+    color: #2a3142;
+    border: 1px solid #c5cad3;
+    border-radius: 6px;
+    margin-top: 9px;
+    padding: 8px 6px 5px 6px;
+    background: #fafbfc;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    left: 8px;
+    padding: 0 5px;
+    color: #1f5fb4;
+}
+QPushButton {
+    padding: 4px 12px;
+    min-height: 22px;
+    border: 1px solid #b8bdc7;
+    border-radius: 4px;
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                stop:0 #ffffff, stop:1 #e8ecf2);
+    color: #1f2530;
+}
+QPushButton:hover {
+    border-color: #4a90d9;
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                stop:0 #ffffff, stop:1 #d6e4f5);
+}
+QPushButton:pressed {
+    background: #c2d4ec;
+}
+QPushButton:disabled {
+    color: #a0a4ad;
+    background: #ededed;
+}
+QCheckBox { spacing: 5px; }
+QLabel { padding: 0; color: #2a3142; }
+QTreeView {
+    border: 1px solid #c5cad3;
+    border-radius: 4px;
+    background: #ffffff;
+    alternate-background-color: #f5f7fa;
+    selection-background-color: #4a90d9;
+    selection-color: #ffffff;
+}
+QTreeView::item { padding: 2px 0; }
+QDoubleSpinBox, QSpinBox {
+    padding: 1px 2px;
+    min-height: 18px;
+    border: 1px solid #b8bdc7;
+    border-radius: 3px;
+}
+QSlider::groove:horizontal {
+    height: 5px;
+    background: #d0d4dc;
+    border-radius: 2px;
+}
+QSlider::sub-page:horizontal {
+    background: #4a90d9;
+    border-radius: 2px;
+}
+QSlider::handle:horizontal {
+    width: 13px;
+    margin: -5px 0;
+    background: qradialgradient(cx:0.5, cy:0.5, radius:0.5,
+                                fx:0.5, fy:0.4,
+                                stop:0 #6aa9e0, stop:1 #2a70b9);
+    border-radius: 6px;
+    border: 1px solid #1f5fb4;
+}
+QSlider::handle:horizontal:hover {
+    background: qradialgradient(cx:0.5, cy:0.5, radius:0.5,
+                                fx:0.5, fy:0.4,
+                                stop:0 #87bce7, stop:1 #3a80c9);
+}
+QStatusBar {
+    background: #2a3142;
+    color: #e8ecf2;
+}
+QToolBar {
+    border-bottom: 1px solid #c5cad3;
+    background: #fafbfc;
+    spacing: 2px;
+    padding: 2px;
+}
+QMenuBar {
+    background: #fafbfc;
+    border-bottom: 1px solid #c5cad3;
+}
+QMenuBar::item:selected { background: #d6e4f5; }
+QMenu { background: #ffffff; border: 1px solid #c5cad3; }
+QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
+  </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QHBoxLayout" name="horizontalLayout_main">
+    <property name="leftMargin">
+     <number>4</number>
+    </property>
+    <property name="topMargin">
+     <number>4</number>
+    </property>
+    <property name="rightMargin">
+     <number>4</number>
+    </property>
+    <property name="bottomMargin">
+     <number>4</number>
+    </property>
+    <property name="spacing">
+     <number>4</number>
+    </property>
     <item>
      <widget class="QSplitter" name="mainSplitter">
       <property name="orientation">
        <enum>Qt::Orientation::Horizontal</enum>
       </property>
+      <property name="handleWidth">
+       <number>6</number>
+      </property>
       <widget class="QWidget" name="leftPanel" native="true">
        <layout class="QVBoxLayout" name="verticalLayout_left">
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <property name="spacing">
+         <number>4</number>
+        </property>
         <item>
          <widget class="QGroupBox" name="treeGroupBox">
           <property name="title">
            <string>Model Parts</string>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_tree">
+           <property name="leftMargin">
+            <number>4</number>
+           </property>
+           <property name="topMargin">
+            <number>2</number>
+           </property>
+           <property name="rightMargin">
+            <number>4</number>
+           </property>
+           <property name="bottomMargin">
+            <number>2</number>
+           </property>
+           <property name="spacing">
+            <number>3</number>
+           </property>
            <item>
             <widget class="QTreeView" name="treeView">
              <property name="contextMenuPolicy">
@@ -37,6 +184,9 @@
            </item>
            <item>
             <layout class="QHBoxLayout" name="horizontalLayout_treeButtons">
+             <property name="spacing">
+              <number>3</number>
+             </property>
              <item>
               <widget class="QPushButton" name="addItemButton">
                <property name="text">
@@ -69,6 +219,21 @@
            <string>Load Models</string>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_load">
+           <property name="leftMargin">
+            <number>4</number>
+           </property>
+           <property name="topMargin">
+            <number>2</number>
+           </property>
+           <property name="rightMargin">
+            <number>4</number>
+           </property>
+           <property name="bottomMargin">
+            <number>2</number>
+           </property>
+           <property name="spacing">
+            <number>3</number>
+           </property>
            <item>
             <widget class="QPushButton" name="openFileButton">
              <property name="text">
@@ -98,6 +263,21 @@
       </widget>
       <widget class="QWidget" name="rightPanel" native="true">
        <layout class="QVBoxLayout" name="verticalLayout_right">
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <property name="spacing">
+         <number>4</number>
+        </property>
         <item>
          <widget class="QVTKOpenGLNativeWidget" name="vtkWidget" native="true">
           <property name="minimumSize">
@@ -114,13 +294,35 @@
            <string>View Controls</string>
           </property>
           <layout class="QGridLayout" name="gridLayout_view">
-           <item row="2" column="2">
-            <widget class="QCheckBox" name="visibilityCheckBox">
+           <property name="leftMargin">
+            <number>4</number>
+           </property>
+           <property name="topMargin">
+            <number>2</number>
+           </property>
+           <property name="rightMargin">
+            <number>4</number>
+           </property>
+           <property name="bottomMargin">
+            <number>2</number>
+           </property>
+           <property name="horizontalSpacing">
+            <number>4</number>
+           </property>
+           <property name="verticalSpacing">
+            <number>3</number>
+           </property>
+           <item row="0" column="0">
+            <widget class="QPushButton" name="resetViewButton">
              <property name="text">
-              <string>Visible</string>
+              <string>Reset Model View</string>
              </property>
-             <property name="checked">
-              <bool>true</bool>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QPushButton" name="changeColourButton">
+             <property name="text">
+              <string>Change Model Colour</string>
              </property>
             </widget>
            </item>
@@ -154,10 +356,13 @@
              </property>
             </widget>
            </item>
-           <item row="0" column="0">
-            <widget class="QPushButton" name="resetViewButton">
+           <item row="2" column="0">
+            <widget class="QLabel" name="shrinkLabel">
              <property name="text">
-              <string>Reset Model View</string>
+              <string>Shrink intensity:</string>
+             </property>
+             <property name="toolTip">
+              <string>Shrink filter (vtkShrinkFilter): 0 = no shrink, 100 = max shrink. Per-part.</string>
              </property>
             </widget>
            </item>
@@ -167,21 +372,20 @@
               <number>100</number>
              </property>
              <property name="orientation">
-              <enum>Qt::Orientation::Horizontal</enum>
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="toolTip">
+              <string>Drag to shrink the selected part. Updates VR via Sync.</string>
              </property>
             </widget>
            </item>
-           <item row="0" column="1">
-            <widget class="QPushButton" name="changeColourButton">
+           <item row="3" column="0">
+            <widget class="QLabel" name="clipLabel">
              <property name="text">
-              <string>Change Model Colour</string>
+              <string>Clip position:</string>
              </property>
-            </widget>
-           </item>
-           <item row="2" column="0">
-            <widget class="QLabel" name="label">
-             <property name="text">
-              <string>Shrink Intensity:</string>
+             <property name="toolTip">
+              <string>Clip plane along X axis (vtkClipDataSet). 0 = off, 100 = clip past max X. Per-part.</string>
              </property>
             </widget>
            </item>
@@ -191,14 +395,23 @@
               <number>100</number>
              </property>
              <property name="orientation">
-              <enum>Qt::Orientation::Horizontal</enum>
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="toolTip">
+              <string>Drag to slice the selected part. Updates VR via Sync.</string>
              </property>
             </widget>
            </item>
-           <item row="3" column="0">
-            <widget class="QLabel" name="label_2">
+           <item row="2" column="2">
+            <widget class="QCheckBox" name="visibilityCheckBox">
              <property name="text">
-              <string>Clipping Intensity</string>
+              <string>Visible</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+             <property name="toolTip">
+              <string>Show or hide the selected part in both views</string>
              </property>
             </widget>
            </item>
@@ -211,6 +424,21 @@
            <string>Virtual Reality</string>
           </property>
           <layout class="QHBoxLayout" name="horizontalLayout_vr">
+           <property name="leftMargin">
+            <number>4</number>
+           </property>
+           <property name="topMargin">
+            <number>2</number>
+           </property>
+           <property name="rightMargin">
+            <number>4</number>
+           </property>
+           <property name="bottomMargin">
+            <number>2</number>
+           </property>
+           <property name="spacing">
+            <number>4</number>
+           </property>
            <item>
             <widget class="QPushButton" name="startVRButton">
              <property name="text">
@@ -237,6 +465,22 @@
             <widget class="QPushButton" name="vrSyncButton">
              <property name="text">
               <string>Sync GUI to VR</string>
+             </property>
+             <property name="toolTip">
+              <string>Push current scene (filters, colours, visibility) into the running headset</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="vrRotateButton">
+             <property name="text">
+              <string>Rotate (R)</string>
+             </property>
+             <property name="toolTip">
+              <string>Spin the model around Y axis inside VR. Same as pressing R.</string>
+             </property>
+             <property name="checkable">
+              <bool>true</bool>
              </property>
             </widget>
            </item>
@@ -268,7 +512,7 @@
      <x>0</x>
      <y>0</y>
      <width>1200</width>
-     <height>25</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -291,6 +535,8 @@
     <addaction name="actionRemove_Item"/>
     <addaction name="separator"/>
     <addaction name="actionItem_Options"/>
+    <addaction name="actionChange_Colour"/>
+    <addaction name="actionToggle_Visibility"/>
    </widget>
    <widget class="QMenu" name="menuView">
     <property name="title">
@@ -308,6 +554,9 @@
     </property>
     <addaction name="actionStart_VR"/>
     <addaction name="actionStop_VR"/>
+    <addaction name="separator"/>
+    <addaction name="actionSync_VR"/>
+    <addaction name="actionToggle_VR_Rotation"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -440,19 +689,19 @@
    </property>
   </action>
   <action name="actionToggle_Shrink">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
    <property name="text">
     <string>Toggle Shrink Filter</string>
    </property>
-  </action>
-  <action name="actionToggle_Clip">
    <property name="checkable">
     <bool>true</bool>
    </property>
+  </action>
+  <action name="actionToggle_Clip">
    <property name="text">
     <string>Toggle Clip Filter</string>
+   </property>
+   <property name="checkable">
+    <bool>true</bool>
    </property>
   </action>
   <action name="actionStart_VR">
@@ -486,6 +735,41 @@
    </property>
    <property name="text">
     <string>About</string>
+   </property>
+  </action>
+  <action name="actionChange_Colour">
+   <property name="text">
+    <string>Change Colour...</string>
+   </property>
+   <property name="toolTip">
+    <string>Pick a colour for the selected part (works in VR via auto-sync)</string>
+   </property>
+  </action>
+  <action name="actionToggle_Visibility">
+   <property name="text">
+    <string>Toggle Visibility</string>
+   </property>
+   <property name="toolTip">
+    <string>Show or hide the selected part in both views</string>
+   </property>
+  </action>
+  <action name="actionToggle_VR_Rotation">
+   <property name="text">
+    <string>Toggle VR Rotation (R)</string>
+   </property>
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="toolTip">
+    <string>Spin the model around its Y axis inside the headset</string>
+   </property>
+  </action>
+  <action name="actionSync_VR">
+   <property name="text">
+    <string>Sync to VR</string>
+   </property>
+   <property name="toolTip">
+    <string>Push the current GUI scene (filters, colours, visibility) into the running VR session</string>
    </property>
   </action>
  </widget>

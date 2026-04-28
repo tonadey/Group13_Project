@@ -15,8 +15,11 @@ find_package(VTK REQUIRED
     FiltersGeneral
     RenderingCore
     RenderingOpenGL2
+    RenderingAnnotation
     IOGeometry
+    IOImage
     InteractionStyle
+    InteractionWidgets
     GUISupportQt
     RenderingOpenVR
 )
@@ -41,6 +44,10 @@ qt_add_executable(ws6
     OptionDialog.cpp
     OptionDialog.h
     OptionDialog.ui
+    VRRenderThread.cpp
+    VRRenderThread.h
+    CrashReporter.cpp
+    CrashReporter.h
 )
 
 # --- Automatic DLL Deployment ---
@@ -66,6 +73,16 @@ target_link_libraries(ws6
     ${VTK_LIBRARIES}
 )
 
+# We call vr::VR_IsRuntimeInstalled / vr::VR_IsHmdPresent in
+# VRRenderThread.cpp to fail fast when SteamVR is not available, instead
+# of crashing inside vtkOpenVRRenderWindowInteractor::Initialize() when
+# vr::VRInput() returns nullptr. Those symbols live in openvr_api, which
+# VTK's RenderingOpenVR module already discovered - reuse its variables.
+if(DEFINED OpenVR_INCLUDE_DIR AND DEFINED OpenVR_LIBRARY)
+    target_include_directories(ws6 PRIVATE ${OpenVR_INCLUDE_DIR})
+    target_link_libraries(ws6 PRIVATE ${OpenVR_LIBRARY})
+endif()
+
 include(GNUInstallDirs)
 
 install(TARGETS ws6
@@ -88,4 +105,13 @@ add_custom_command(TARGET VRBindings PRE_BUILD
     COMMAND ${CMAKE_COMMAND} -E
     copy_directory ${CMAKE_SOURCE_DIR}/vrbindings ${CMAKE_BINARY_DIR}/
 )
+
+# Copy skybox HDRI(s) next to the exe so the VR scene can find them at runtime
+if(EXISTS ${CMAKE_SOURCE_DIR}/skybox)
+    add_custom_command(TARGET ws6 POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/skybox $<TARGET_FILE_DIR:ws6>/skybox
+        COMMENT "Copying skybox HDRIs next to the executable"
+    )
+endif()
 
