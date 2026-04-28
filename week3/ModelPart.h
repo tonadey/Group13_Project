@@ -61,7 +61,7 @@ public:
   void setShrinkFactor(double factor);
   void applyClipping(double actualX);
   double getShrinkFactor() const { return m_shrinkFactor; }
-
+  double getClipX() const { return m_clipX; }
 
   /** Rebuild the mapper input chain (reader -> [filters] -> mapper)
    *  according to the current filter flags. */
