@@ -1,0 +1,122 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\Users\tonad\test\Group13_Project\week3\ws6_autogen\mocs_compilation_Debug.cpp">
+      <Filter>Source Files\Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\tonad\test\Group13_Project\week3\main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\tonad\test\Group13_Project\week3\mainwindow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\tonad\test\Group13_Project\week3\ModelPart.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\tonad\test\Group13_Project\week3\ModelPartList.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\tonad\test\Group13_Project\week3\OptionDialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\tonad\test\Group13_Project\week3\ws6_autogen\EWIEGA46WW_Debug\qrc_icons.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\tonad\test\Group13_Project\week3\ws6_autogen\mocs_compilation_Release.cpp">
+      <Filter>Source Files\Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\tonad\test\Group13_Project\week3\ws6_autogen\EWIEGA46WW_Release\qrc_icons.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\tonad\test\Group13_Project\week3\ws6_autogen\mocs_compilation_MinSizeRel.cpp">
+      <Filter>Source Files\Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\tonad\test\Group13_Project\week3\ws6_autogen\EWIEGA46WW_MinSizeRel\qrc_icons.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\tonad\test\Group13_Project\week3\ws6_autogen\mocs_compilation_RelWithDebInfo.cpp">
+      <Filter>Source Files\Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\tonad\test\Group13_Project\week3\ws6_autogen\EWIEGA46WW_RelWithDebInfo\qrc_icons.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="C:\Users\tonad\test\Group13_Project\week3\mainwindow.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\tonad\test\Group13_Project\week3\ModelPart.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\tonad\test\Group13_Project\week3\ModelPartList.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\tonad\test\Group13_Project\week3\OptionDialog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\tonad\test\Group13_Project\week3\ws6_autogen\include_Debug\ui_mainwindow.h">
+      <Filter>Source Files\Generated</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\tonad\test\Group13_Project\week3\ws6_autogen\include_Debug\ui_OptionDialog.h">
+      <Filter>Source Files\Generated</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\tonad\test\Group13_Project\week3\ws6_autogen\include_Release\ui_mainwindow.h">
+      <Filter>Source Files\Generated</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\tonad\test\Group13_Project\week3\ws6_autogen\include_Release\ui_OptionDialog.h">
+      <Filter>Source Files\Generated</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\tonad\test\Group13_Project\week3\ws6_autogen\include_MinSizeRel\ui_mainwindow.h">
+      <Filter>Source Files\Generated</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\tonad\test\Group13_Project\week3\ws6_autogen\include_MinSizeRel\ui_OptionDialog.h">
+      <Filter>Source Files\Generated</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\tonad\test\Group13_Project\week3\ws6_autogen\include_RelWithDebInfo\ui_mainwindow.h">
+      <Filter>Source Files\Generated</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\tonad\test\Group13_Project\week3\ws6_autogen\include_RelWithDebInfo\ui_OptionDialog.h">
+      <Filter>Source Files\Generated</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\tonad\test\Group13_Project\week3\CMakeFiles\1178ec387e2afc51d125183290c2e2c9\autouic_(CONFIG).stamp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\tonad\test\Group13_Project\week3\CMakeFiles\058fc9ea0c0e06e63f3d6d3a87cdefbe\qrc_icons.cpp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\tonad\test\Group13_Project\week3\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="C:\Users\tonad\test\Group13_Project\week3\mainwindow.ui" />
+    <None Include="C:\Users\tonad\test\Group13_Project\week3\icons.qrc" />
+    <None Include="C:\Users\tonad\test\Group13_Project\week3\OptionDialog.ui" />
+    <None Include="C:\Users\tonad\test\Group13_Project\week3\ws6_autogen\autouic_Debug.stamp">
+      <Filter>Source Files\Generated</Filter>
+    </None>
+    <None Include="C:\Users\tonad\test\Group13_Project\week3\ws6_autogen\autouic_Release.stamp">
+      <Filter>Source Files\Generated</Filter>
+    </None>
+    <None Include="C:\Users\tonad\test\Group13_Project\week3\ws6_autogen\autouic_MinSizeRel.stamp">
+      <Filter>Source Files\Generated</Filter>
+    </None>
+    <None Include="C:\Users\tonad\test\Group13_Project\week3\ws6_autogen\autouic_RelWithDebInfo.stamp">
+      <Filter>Source Files\Generated</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{868FD3BB-4C66-3842-8A62-3CE9858CBB8F}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{CA4F70C2-3100-3938-BB63-53395E95851D}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{2D19BBE7-44C6-3A8C-B131-890A625B56DA}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Generated">
+      <UniqueIdentifier>{EC8A2303-9EDE-3928-BDB5-2AD2D7D50B1B}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

@@ -110,34 +110,55 @@ MainWindow::~MainWindow() {
 }
 
 void MainWindow::handleTreeClicked() {
-  QModelIndex index = ui->treeView->currentIndex();
-  if (!index.isValid())
-    return;
+    // 1. Get the selected item
+    QModelIndex index = ui->treeView->currentIndex();
+    if (!index.isValid()) return;
 
-  ModelPart *selectedPart = static_cast<ModelPart *>(index.internalPointer());
-  if (!selectedPart)
-    return;
+    ModelPart* selectedPart = static_cast<ModelPart*>(index.internalPointer());
+    if (!selectedPart || !selectedPart->getActor()) return;
 
-  QString text = selectedPart->data(0).toString();
+    QString text = selectedPart->data(0).toString();
 
-  /* Reflect selected item's filter/visibility state in the right-panel
-   * controls */
-  //ui->shrinkFilterCheckBox->blockSignals(true);
-  //ui->clipFilterCheckBox->blockSignals(true);
-  ui->visibilityCheckBox->blockSignals(true);
-  //ui->shrinkFilterCheckBox->setChecked(selectedPart->getShrinkFilter());
-  //ui->clipFilterCheckBox->setChecked(selectedPart->getClipFilter());
-  ui->visibilityCheckBox->setChecked(selectedPart->visible());
-  //ui->shrinkFilterCheckBox->blockSignals(false);
-  //ui->clipFilterCheckBox->blockSignals(false);
-  ui->visibilityCheckBox->blockSignals(false);
-  ui->shrinkSlider->blockSignals(true); // Prevent slider move from triggering logic
-  ui->clipSlider->blockSignals(true);
-  // Assuming shrink is 0.0-1.0 and clip is mapped 0-100
-  ui->shrinkSlider->setValue(selectedPart->getShrinkFactor() * 100);
+    // 2. Sync Visibility Checkbox
+    ui->visibilityCheckBox->blockSignals(true);
+    ui->visibilityCheckBox->setChecked(selectedPart->visible());
+    ui->visibilityCheckBox->blockSignals(false);
 
-  emit statusUpdateMessage(QString("Selected: ") + text, 0);
+    // 3. Sync Shrink Slider
+    // Logic: Factor 1.0 (Full size) -> Slider 0 | Factor 0.0 (Invisible) -> Slider 100
+    ui->shrinkSlider->blockSignals(true);
+    int shrinkPos = 100 - static_cast<int>(selectedPart->getShrinkFactor() * 100);
+    ui->shrinkSlider->setValue(shrinkPos);
+    ui->shrinkSlider->blockSignals(false);
+
+    // 4. Sync Light Intensity (Ambient Property)
+    // Maps the actor's ambient reflectivity (0.0 - 1.0) back to the slider (0 - 100)
+    ui->lightSlider->blockSignals(true);
+    double currentAmbient = selectedPart->getActor()->GetProperty()->GetAmbient();
+    ui->lightSlider->setValue(static_cast<int>(currentAmbient * 100));
+    ui->lightSlider->blockSignals(false);
+
+    // 5. Sync Clip Slider
+    ui->clipSlider->blockSignals(true);
+    if (selectedPart->getActor()) {
+        double bounds[6];
+        selectedPart->getActor()->GetBounds(bounds);
+        double minX = bounds[0];
+        double maxX = bounds[1];
+
+        // Find the percentage of where the current clip position is between Min and Max
+        if (maxX != minX) {
+            // Need a getClipX() in ModelPart.h, or use the variable m_clipX
+            // For now, let's assume we map it back or default to 0
+            // int clipPos = ((currentClipX - minX) / (maxX - minX)) * 100;
+            // ui->clipSlider->setValue(clipPos);
+        }
+    }
+    ui->clipSlider->blockSignals(false);
+
+    emit statusUpdateMessage(QString("Selected: ") + text, 0);
 }
+
 
 void MainWindow::openItemOptions() {
   QModelIndex index = ui->treeView->currentIndex();
@@ -204,8 +225,9 @@ void MainWindow::on_actionOpen_File_triggered() {
     return;
   }
 
-  QList<QVariant> data = {tr("New Part"), tr("Yes")};
-  QModelIndex newIndex = partList->appendChild(index, data);
+  QList<QVariant> data = { tr("New Part"), tr("Yes") };
+  QModelIndex rootIndex; // An empty, invalid index represents the root
+  QModelIndex newIndex = partList->appendChild(rootIndex, data);
 
   if (!newIndex.isValid()) {
     emit statusUpdateMessage(tr("Failed to create new tree item"), 0);
@@ -473,9 +495,20 @@ void MainWindow::onBackgroundColourClicked() {
 }
 
 void MainWindow::onLightIntensityChanged(int value) {
-  emit statusUpdateMessage(
-      QString("Light intensity: %1 (not yet wired to a vtkLight)").arg(value),
-      0);
+    QModelIndex index = ui->treeView->currentIndex();
+    if (!index.isValid()) return;
+
+    ModelPart* selectedPart = static_cast<ModelPart*>(index.internalPointer());
+    if (!selectedPart || !selectedPart->getActor()) return;
+
+    // Convert 0-100 slider to 0.0-1.0 brightness
+    double brightness = value / 100.0;
+
+    // Set Ambient and Diffuse to make the object look "lit" or "dark"
+    selectedPart->getActor()->GetProperty()->SetAmbient(brightness);
+    selectedPart->getActor()->GetProperty()->SetDiffuse(1.0 - (brightness * 0.5));
+
+    renderWindow->Render();
 }
 
 
