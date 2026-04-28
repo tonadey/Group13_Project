@@ -106,11 +106,6 @@ private:
   /* Slider state from the merged main branch. */
   double m_shrinkFactor = 1.0;
   double m_clipX = 0.0;
-  double originalBounds[6];
-
-  /* Pre-filter bounds, captured in loadSTL so getOriginalBounds() can
-   * hand them to the clip slider. */
-  double originalBounds[6] = {0, 0, 0, 0, 0, 0};
 
   /* Pre-filter bounds, captured in loadSTL so getOriginalBounds() can
    * hand them to the clip slider. */
