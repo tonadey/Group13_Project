@@ -58,6 +58,11 @@ public:
   bool getClipFilter() const { return m_clipFilter; }
   void setShrinkFilter(bool enabled);
   bool getShrinkFilter() const { return m_shrinkFilter; }
+
+  /** Continuous-slider filter controls (merged from main branch).
+   *  setShrinkFactor enables shrink iff factor < 1.0 and uses the value
+   *  as the vtkShrinkFilter factor; applyClipping enables clipping and
+   *  positions the clip plane at world-space x. */
   void setShrinkFactor(double factor);
   void applyClipping(double actualX);
   double getShrinkFactor() const { return m_shrinkFactor; }
@@ -68,7 +73,14 @@ public:
    *  according to the current filter flags. */
   void refreshFilters();
 
-  void loadSTL(QString fileName);
+  /** Load an STL file. Returns true on success. On failure, *errorMsg
+   *  (if non-null) carries a human-readable reason so the GUI can tell
+   *  the user instead of silently leaving an empty actor in the tree. */
+  bool loadSTL(QString fileName, QString *errorMsg = nullptr);
+
+  /** Triangle count of the loaded mesh, or 0 if nothing has been loaded.
+   *  Used by the GUI to warn before pushing a huge scene into VR. */
+  vtkIdType getTriangleCount() const;
 
   vtkSmartPointer<vtkActor> getActor();
   vtkSmartPointer<vtkActor> getNewActor();
@@ -85,16 +97,20 @@ private:
   bool m_clipFilter;
   bool m_shrinkFilter;
 
+  /* Slider state from the merged main branch. */
   double m_shrinkFactor = 1.0;
   double m_clipX = 0.0;
   double originalBounds[6];
 
   vtkSmartPointer<vtkSTLReader> reader;
+  vtkSmartPointer<vtkDataSetMapper> mapper;
+  vtkSmartPointer<vtkActor> actor;
+
+  /* Filter pipeline objects, kept as members so they remain alive while
+   * the mapper references them. */
   vtkSmartPointer<vtkShrinkFilter> shrinkFilter;
   vtkSmartPointer<vtkClipDataSet> clipFilter;
   vtkSmartPointer<vtkPlane> clipPlane;
-  vtkSmartPointer<vtkDataSetMapper> mapper;
-  vtkSmartPointer<vtkActor> actor;
 };
 
 #endif
