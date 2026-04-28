@@ -131,11 +131,12 @@ void MainWindow::handleTreeClicked() {
 
     // 3. Update Light Slider (Individual Part Brightness)
     ui->lightSlider->blockSignals(true);
+    // Sync with the actor's Ambient property (0.0 to 1.0 mapped to 0-100)
     double ambient = selectedPart->getActor()->GetProperty()->GetAmbient();
     ui->lightSlider->setValue(static_cast<int>(ambient * 100));
     ui->lightSlider->blockSignals(false);
 
-    // 4. Update Clip Slider (Mapping percentage to physical bounds)
+    // 4. Update Clip Slider (The Mapping Fix)
     ui->clipSlider->blockSignals(true);
     double bounds[6];
     selectedPart->getActor()->GetBounds(bounds);
@@ -143,11 +144,14 @@ void MainWindow::handleTreeClicked() {
     double maxX = bounds[1];
 
     if (maxX != minX) {
+        // We calculate what percentage of the way 'm_clipX' is through the model
         double currentX = selectedPart->getClipX();
         int clipPos = static_cast<int>(((currentX - minX) / (maxX - minX)) * 100.0);
 
-        // Clamp values between 0 and 100
-        clipPos = std::max(0, std::min(100, clipPos));
+        // Ensure it stays within slider range
+        if (clipPos < 0) clipPos = 0;
+        if (clipPos > 100) clipPos = 100;
+
         ui->clipSlider->setValue(clipPos);
     }
     ui->clipSlider->blockSignals(false);
@@ -157,10 +161,6 @@ void MainWindow::handleTreeClicked() {
 
 
 
-<<<<<<< HEAD
-=======
-
->>>>>>> Toni
 void MainWindow::openItemOptions() {
     QModelIndex index = ui->treeView->currentIndex();
 
@@ -226,15 +226,9 @@ void MainWindow::on_actionOpen_File_triggered() {
         return;
     }
 
-<<<<<<< HEAD
-  QList<QVariant> data = { tr("New Part"), tr("Yes") };
-  QModelIndex rootIndex; // An empty, invalid index represents the root
-  QModelIndex newIndex = partList->appendChild(rootIndex, data);
-=======
     QList<QVariant> data = { tr("New Part"), tr("Yes") };
     QModelIndex rootIndex; // An empty, invalid index represents the root
     QModelIndex newIndex = partList->appendChild(rootIndex, data);
->>>>>>> Toni
 
     if (!newIndex.isValid()) {
         emit statusUpdateMessage(tr("Failed to create new tree item"), 0);
@@ -507,7 +501,7 @@ void MainWindow::onLightIntensityChanged(int value) {
     // Convert 0-100 slider to 0.0-1.0
     double intensity = value / 100.0;
 
-    // Setting both ensures the model reacts correctly to the slider
+    // Set both to ensure the model actually gets darker/brighter
     selectedPart->getActor()->GetProperty()->SetAmbient(intensity);
     selectedPart->getActor()->GetProperty()->SetDiffuse(intensity);
 
