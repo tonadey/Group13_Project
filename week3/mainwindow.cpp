@@ -1,11 +1,13 @@
 #include "mainwindow.h"
 #include "OptionDialog.h"
 #include "ui_mainwindow.h"
+#include <QAbstractItemView>
 #include <QAction>
 #include <QApplication>
 #include <QClipboard>
 #include <QCloseEvent>
 #include <QColorDialog>
+#include <QComboBox>
 #include <QDateTime>
 #include <QDebug>
 #include <QDialog>
@@ -13,20 +15,27 @@
 #include <QDir>
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QGuiApplication>
 #include <QIcon>
 #include <QKeySequence>
 #include <QLabel>
+#include <QScreen>
+#include <QListView>
 #include <QLocale>
 #include <QMessageBox>
+#include <QMouseEvent>
 #include <QPlainTextEdit>
 #include <QProgressDialog>
 #include <QPushButton>
+#include <QSet>
 #include <QStyle>
+#include <QTreeView>
 #include <QVBoxLayout>
 #include <functional>
 
 #include <QVTKOpenGLNativeWidget.h>
 #include <vtkActor.h>
+#include <vtkActorCollection.h>
 #include <vtkAxesActor.h>
 #include <vtkCamera.h>
 #include <vtkCaptionActor2D.h>
@@ -34,6 +43,7 @@
 #include <vtkLight.h>
 #include <vtkNew.h>
 #include <vtkOrientationMarkerWidget.h>
+#include <vtkPropPicker.h>
 #include <vtkProperty.h>
 #include <vtkRenderer.h>
 #include <vtkTextProperty.h>
@@ -41,6 +51,21 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), ui(new Ui::MainWindow), vrThread(nullptr) {
   ui->setupUi(this);
+
+  /* The .ui defaults to 1200x780 which is taller than the work area on
+   * a 1366x768 laptop with the Windows taskbar visible - the bottom
+   * VR Controls row gets clipped behind the taskbar. Cap to the
+   * screen's available geometry (which already excludes taskbars and
+   * docks) and centre on it so the user never has to drag the window
+   * up to see the buttons. */
+  if (QScreen *scr = QGuiApplication::primaryScreen()) {
+    QRect avail = scr->availableGeometry();
+    QSize def(qMin(1200, avail.width() - 20),
+              qMin(780, avail.height() - 20));
+    resize(def);
+    move(avail.x() + (avail.width() - def.width()) / 2,
+         avail.y() + (avail.height() - def.height()) / 2);
+  }
 
   /* Snapshot the .ui-baked light stylesheet so applyTheme() can clear it
    * for dark mode (widget-level styles outrank qApp ones) and restore it
@@ -52,7 +77,6 @@ MainWindow::MainWindow(QWidget *parent)
   setWindowIcon(QIcon(":/Icons/icons/startVR.png"));
   refreshWindowTitle();
 
-  ui->openFolderButton->setIcon(style()->standardIcon(QStyle::SP_DirOpenIcon));
   ui->actionOpen_Folder->setIcon(style()->standardIcon(QStyle::SP_DirOpenIcon));
 
   /* Tree-side buttons */
@@ -63,11 +87,9 @@ MainWindow::MainWindow(QWidget *parent)
   connect(ui->optionsButton, &QPushButton::released, this,
           &MainWindow::openItemOptions);
 
-  /* Load-models buttons */
-  connect(ui->openFileButton, &QPushButton::released, this,
-          &MainWindow::on_actionOpen_File_triggered);
-  connect(ui->openFolderButton, &QPushButton::released, this,
-          &MainWindow::on_actionOpen_Folder_triggered);
+  /* Open File / Open Folder live in the File menu and the toolbar - both
+   * routes auto-connect to on_actionOpen_File_triggered /
+   * on_actionOpen_Folder_triggered via setupUi's connectSlotsByName. */
 
   /* View-controls widgets */
   connect(ui->resetViewButton, &QPushButton::released, this,
@@ -82,18 +104,33 @@ MainWindow::MainWindow(QWidget *parent)
           &MainWindow::onShrinkSliderChanged);
   connect(ui->clipSlider, &QSlider::valueChanged, this,
           &MainWindow::onClipSliderChanged);
-  /* Marksheet: "VR updates filters in real-time". Pushing on every
-   * valueChanged would rebuild the filter chain at ~60Hz while dragging
-   * which stalls the GUI; pushing only on sliderReleased gives the
-   * "release the slider, see it in VR" experience without the cost. */
-  auto autoPushVR = [this]() {
-    if (vrThread && vrThread->isRunning()) {
-      vrThread->issueCommand(VRRenderThread::CLEAR_SCENE, 0.0);
-      pushTreeActorsToVR(QModelIndex());
-    }
-  };
-  connect(ui->shrinkSlider, &QSlider::sliderReleased, this, autoPushVR);
-  connect(ui->clipSlider, &QSlider::sliderReleased, this, autoPushVR);
+  /* Auto-sync VR after any change. The slider value handlers
+   * (onShrinkSliderChanged etc.) call scheduleVRSync() at the end, so
+   * every slider tick during a drag schedules a sync. The 100ms
+   * debounce coalesces the storm of valueChanged events into one sync
+   * the moment the user briefly pauses (or releases the handle), giving
+   * a near-live feel inside VR without rebuilding the scene 60 times
+   * per second. */
+  m_vrSyncDebounce = new QTimer(this);
+  m_vrSyncDebounce->setSingleShot(true);
+  m_vrSyncDebounce->setInterval(100);
+  connect(m_vrSyncDebounce, &QTimer::timeout, this, &MainWindow::doVRSync);
+  /* Animated one-click explode + direction dropdown. The QTimer
+   * (created lazily on first click) drives a 1-second transition;
+   * see onExplodeButtonClicked / onExplodeAnimTick for the loop. */
+  connect(ui->explodeButton, &QPushButton::clicked, this,
+          &MainWindow::onExplodeButtonClicked);
+  connect(ui->explodeModeBox,
+          QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+          &MainWindow::onExplodeModeChanged);
+
+  /* X-ray opacity slider + Solid quick-reset. Slider drives per-tick
+   * desktop updates; the VR sync on release is wired earlier with the
+   * shrink/clip sliders to keep all the auto-sync triggers in one place. */
+  connect(ui->opacitySlider, &QSlider::valueChanged, this,
+          &MainWindow::onOpacitySliderChanged);
+  connect(ui->opacitySolidButton, &QPushButton::released, this,
+          &MainWindow::onOpacitySolidClicked);
   connect(ui->visibilityCheckBox, &QCheckBox::toggled, this,
           &MainWindow::onVisibilityToggled);
 
@@ -174,8 +211,10 @@ MainWindow::MainWindow(QWidget *parent)
 
   /* --- Hook VTK render window to the Qt widget --- */
   renderWindow = vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New();
-  /* Multi-sample anti-aliasing: smooths polygon edges; 8x is well supported. */
-  renderWindow->SetMultiSamples(8);
+  /* MSAA is set later, in tandem with depth peeling - the two are
+   * mutually exclusive on most drivers, so we pick depth peeling
+   * (needed for the X-ray feature) and rely on FXAA below for
+   * edge smoothing. */
   ui->vtkWidget->setRenderWindow(renderWindow);
 
   renderer = vtkSmartPointer<vtkRenderer>::New();
@@ -189,6 +228,20 @@ MainWindow::MainWindow(QWidget *parent)
 
   /* FXAA on top of MSAA gives clean lines on thin geometry / silhouettes. */
   renderer->UseFXAAOn();
+
+  /* Order-independent transparency via depth peeling. Without this,
+   * stacking multiple translucent X-ray parts shows obvious sorting
+   * artefacts (the part further from the camera bleeds through the
+   * one in front). 4 peels is plenty for a CAD assembly with ~10
+   * overlapping shells; OcclusionRatio 0.1 lets VTK stop early once
+   * the remaining contribution drops below 10%. Requires the
+   * renderWindow to use alpha bit planes, which vtkGenericOpenGLRenderWindow
+   * does by default. */
+  renderWindow->SetAlphaBitPlanes(1);
+  renderWindow->SetMultiSamples(0); /* MSAA + depth peeling don't mix */
+  renderer->SetUseDepthPeeling(1);
+  renderer->SetMaximumNumberOfPeels(4);
+  renderer->SetOcclusionRatio(0.1);
 
   /* Headlight controlled by the right-panel Light Intensity slider. */
   setupLighting();
@@ -225,6 +278,12 @@ MainWindow::MainWindow(QWidget *parent)
   renderer->GetActiveCamera()->Azimuth(30);
   renderer->GetActiveCamera()->Elevation(30);
   renderer->ResetCameraClippingRange();
+
+  /* Install ourselves as an event filter on the VTK render widget so
+   * we can detect a "click without drag" and turn it into a part
+   * selection. Press / release tracking lives in eventFilter(); the
+   * actual ray cast is in pickPartAt(). */
+  ui->vtkWidget->installEventFilter(this);
 
   updateRender();
 
@@ -379,7 +438,8 @@ void MainWindow::openItemOptions() {
   if (selectedPart->getActor()) {
     selectedPart->getActor()->GetProperty()->SetColor(
         dialog.getR() / 255.0, dialog.getG() / 255.0, dialog.getB() / 255.0);
-    selectedPart->getActor()->SetVisibility(dialog.getVisible());
+    /* No SetVisibility call here - selectedPart->setVisible(...) above
+     * already pushed the new visibility state into the actor. */
   }
 
   updateRender();
@@ -426,6 +486,15 @@ void MainWindow::on_actionOpen_File_triggered() {
   if (index.isValid())
     ui->treeView->expand(index);
 
+  /* If X-ray mode is currently active, the slider's value is < 100
+   * and the existing parts are translucent. A freshly loaded part
+   * defaults to opaque, which would stick out as solid amongst the
+   * see-through ones. Re-apply the global opacity to the whole
+   * tree so the new part inherits it. */
+  double currentOpacity = ui->opacitySlider->value() / 100.0;
+  if (currentOpacity < 1.0)
+    applyOpacityToTree(QModelIndex(), currentOpacity);
+
   updateRender();
   renderer->ResetCamera();
   renderWindow->Render();
@@ -436,20 +505,54 @@ void MainWindow::on_actionOpen_File_triggered() {
 void MainWindow::on_actionOpen_Folder_triggered() {
   QModelIndex parentIndex = ui->treeView->currentIndex();
 
-  QString dirPath = QFileDialog::getExistingDirectory(
-      this, tr("Open Folder of STL Files"), lastBrowsedDir);
+  /* Multi-folder pick: Qt's getExistingDirectory only returns one
+   * folder, and the native Windows directory picker doesn't support
+   * multi-select at all. So we drop to a non-native QFileDialog and
+   * flip its internal QListView/QTreeView into ExtendedSelection
+   * mode - that way Ctrl+click / Shift+click in the dialog picks
+   * several folders in a single shot. */
+  QStringList chosenPaths;
+  {
+    QFileDialog dialog(this, tr("Open Folder(s) of STL Files"),
+                       lastBrowsedDir);
+    dialog.setFileMode(QFileDialog::Directory);
+    dialog.setOption(QFileDialog::DontUseNativeDialog, true);
+    dialog.setOption(QFileDialog::ShowDirsOnly, true);
 
-  if (dirPath.isEmpty()) {
+    /* The two children below are the dialog's contents view; their
+     * exact object names / classes are stable across Qt 5/6. Setting
+     * ExtendedSelection on whichever one is currently shown gives
+     * the user the standard Ctrl/Shift multi-select behaviour. */
+    if (auto *l = dialog.findChild<QListView *>("listView"))
+      l->setSelectionMode(QAbstractItemView::ExtendedSelection);
+    if (auto *t = dialog.findChild<QTreeView *>())
+      t->setSelectionMode(QAbstractItemView::ExtendedSelection);
+
+    if (dialog.exec() != QDialog::Accepted) {
+      emit statusUpdateMessage(tr("Open folder cancelled"), 0);
+      return;
+    }
+
+    chosenPaths = dialog.selectedFiles();
+    /* Drop accidental duplicates (some Qt versions occasionally
+     * include the dialog's current directory alongside the
+     * actual selection). */
+    chosenPaths.removeDuplicates();
+  }
+
+  if (chosenPaths.isEmpty()) {
     emit statusUpdateMessage(tr("Open folder cancelled"), 0);
     return;
   }
-  lastBrowsedDir = dirPath;
 
-  /* Walk the chosen directory recursively. Empty branches (folders with
-   * no STLs anywhere in their subtree) are pruned so the GUI tree
-   * mirrors only the parts of the filesystem that actually hold
-   * geometry. Picking Models/ pulls in Level0/Level1/Level2 plus all of
-   * their nested category folders in one go. */
+  /* Anchor the next browse on the first picked folder's parent so
+   * the dialog re-opens at the same level the user was working at. */
+  lastBrowsedDir = QFileInfo(chosenPaths.first()).absolutePath();
+
+  /* Walk each chosen directory recursively. Empty branches (folders
+   * with no STLs anywhere in their subtree) are pruned so the GUI
+   * tree mirrors only the parts of the filesystem that actually
+   * hold geometry. */
   struct Node {
     QDir dir;
     QStringList files;
@@ -481,22 +584,40 @@ void MainWindow::on_actionOpen_Folder_triggered() {
     return c;
   };
 
-  QDir rootDir(dirPath);
-  Node tree;
-  if (!scan(rootDir, tree)) {
-    emit statusUpdateMessage(tr("No STL files found in: ") + rootDir.dirName(),
-                             0);
+  /* Build one Node per chosen folder. Skip any that have no STLs
+   * anywhere in their subtree so we don't produce empty tree rows. */
+  QList<Node> roots;
+  QStringList skippedNames;
+  for (const QString &path : chosenPaths) {
+    Node root;
+    if (scan(QDir(path), root))
+      roots.append(root);
+    else
+      skippedNames << QFileInfo(path).fileName();
+  }
+
+  if (roots.isEmpty()) {
+    emit statusUpdateMessage(tr("No STL files found in selection"), 0);
     QMessageBox::information(
         this, tr("No STL Files"),
-        tr("The chosen directory and its subfolders contain no .stl files."));
+        tr("None of the chosen folders contain .stl files (in any "
+           "subdirectory)."));
     return;
   }
 
-  const int totalFiles = count(tree);
+  int totalFiles = 0;
+  for (const Node &n : roots)
+    totalFiles += count(n);
 
+  /* One progress dialog spans the whole multi-folder load so the
+   * user gets a single "X of N files" rather than back-to-back
+   * dialogs flashing past. */
   QProgressDialog progress(tr("Loading STL files..."), tr("Cancel"), 0,
                            totalFiles, this);
-  progress.setWindowTitle(tr("Loading %1").arg(rootDir.dirName()));
+  const QString title = (roots.size() == 1)
+                            ? tr("Loading %1").arg(roots.first().dir.dirName())
+                            : tr("Loading %1 folders").arg(roots.size());
+  progress.setWindowTitle(title);
   progress.setWindowModality(Qt::WindowModal);
   progress.setMinimumDuration(0);
   progress.setValue(0);
@@ -563,16 +684,37 @@ void MainWindow::on_actionOpen_Folder_triggered() {
         ui->treeView->expand(nodeIdx);
       };
 
-  load(tree, parentIndex);
+  /* Drop each root underneath the currently-selected tree row (or
+   * top-level if nothing is selected, same as before). */
+  for (const Node &root : roots) {
+    if (cancelled)
+      break;
+    load(root, parentIndex);
+  }
 
   progress.setValue(totalFiles);
 
   if (parentIndex.isValid())
     ui->treeView->expand(parentIndex);
 
+  /* Inherit the current X-ray level on every freshly loaded part
+   * (see Open File handler for the rationale). */
+  double currentOpacity = ui->opacitySlider->value() / 100.0;
+  if (currentOpacity < 1.0)
+    applyOpacityToTree(QModelIndex(), currentOpacity);
+
   updateRender();
   renderer->ResetCamera();
   renderWindow->Render();
+
+  /* Compose a status message that lists the loaded folders, plus a
+   * note about any picked folders that were empty so the user
+   * notices their drag selection accidentally caught a non-STL
+   * directory. */
+  QStringList rootNames;
+  for (const Node &n : roots)
+    rootNames << n.dir.dirName();
+  const QString summary = rootNames.join(QStringLiteral(", "));
 
   if (cancelled) {
     emit statusUpdateMessage(QString("Loading cancelled after %1 of %2 files")
@@ -580,10 +722,13 @@ void MainWindow::on_actionOpen_Folder_triggered() {
                                  .arg(totalFiles),
                              0);
   } else {
-    emit statusUpdateMessage(QString("Loaded %1 STL files from %2")
-                                 .arg(loaded)
-                                 .arg(rootDir.dirName()),
-                             0);
+    QString msg = QString("Loaded %1 STL files from: %2")
+                      .arg(loaded)
+                      .arg(summary);
+    if (!skippedNames.isEmpty())
+      msg += QString("  (skipped empty: %1)")
+                 .arg(skippedNames.join(QStringLiteral(", ")));
+    emit statusUpdateMessage(msg, 0);
   }
 }
 
@@ -600,28 +745,57 @@ void MainWindow::on_actionExit_triggered() {
 }
 
 void MainWindow::updateRender() {
-  renderer->RemoveAllViewProps();
-  updateRenderFromTree(QModelIndex());
-  renderWindow->Render();
-}
+  /* Build the desired set of actors from the current tree. Folder rows
+   * have no actor (loadSTL was never called), so they're naturally
+   * skipped by the null check in collectTreeActors. */
+  QSet<vtkActor *> desired;
+  collectTreeActors(QModelIndex(), desired);
 
-void MainWindow::updateRenderFromTree(const QModelIndex &index) {
-  if (index.isValid()) {
-    ModelPart *selectedPart = static_cast<ModelPart *>(index.internalPointer());
-    if (selectedPart && selectedPart->getActor()) {
-      vtkProperty *prop = selectedPart->getActor()->GetProperty();
+  /* Snapshot the renderer's current actors. We can't mutate the
+   * collection while iterating it, so we collect first, diff second. */
+  QSet<vtkActor *> current;
+  if (vtkActorCollection *actors = renderer->GetActors()) {
+    vtkCollectionSimpleIterator it;
+    actors->InitTraversal(it);
+    while (vtkActor *a = actors->GetNextActor(it))
+      current.insert(a);
+  }
+
+  /* Remove actors that left the tree (e.g. on Remove Item). */
+  for (vtkActor *a : current) {
+    if (!desired.contains(a))
+      renderer->RemoveActor(a);
+  }
+
+  /* Add actors that just appeared (e.g. on Open File / Open Folder).
+   * Material props are stamped only on first add - they don't change
+   * across renders, so re-stamping every frame (as the old recursive
+   * version did) was wasted work. */
+  for (vtkActor *a : desired) {
+    if (!current.contains(a)) {
+      vtkProperty *prop = a->GetProperty();
       prop->SetAmbient(0.3);
       prop->SetDiffuse(0.8);
       prop->SetSpecular(0.3);
       prop->SetSpecularPower(20);
-      renderer->AddActor(selectedPart->getActor());
+      renderer->AddActor(a);
     }
   }
 
-  int rows = partList->rowCount(index);
-  for (int i = 0; i < rows; i++) {
-    updateRenderFromTree(partList->index(i, 0, index));
+  renderWindow->Render();
+}
+
+void MainWindow::collectTreeActors(const QModelIndex &index,
+                                   QSet<vtkActor *> &out) const {
+  if (index.isValid()) {
+    ModelPart *part = static_cast<ModelPart *>(index.internalPointer());
+    if (part && part->getActor())
+      out.insert(part->getActor().Get());
   }
+
+  int rows = partList->rowCount(index);
+  for (int i = 0; i < rows; i++)
+    collectTreeActors(partList->index(i, 0, index), out);
 }
 
 void MainWindow::on_actionItem_Options_triggered() { openItemOptions(); }
@@ -864,12 +1038,8 @@ void MainWindow::onChangeColourClicked() {
         chosen.redF(), chosen.greenF(), chosen.blueF());
   }
   renderWindow->Render();
-  /* Marksheet: "VR updates colour in real-time (no need to restart)".
-   * Push the change immediately if a headset session is live. */
-  if (vrThread && vrThread->isRunning()) {
-    vrThread->issueCommand(VRRenderThread::CLEAR_SCENE, 0.0);
-    pushTreeActorsToVR(QModelIndex());
-  }
+  /* Marksheet: "VR updates colour in real-time (no need to restart)". */
+  scheduleVRSync();
   emit statusUpdateMessage(tr("Changed colour for: ") + selectedPart->data(0).toString(), 0);
 }
 
@@ -921,6 +1091,7 @@ void MainWindow::onShrinkSliderChanged(int value) {
   double factor = (100.0 - value) / 100.0;
   selectedPart->setShrinkFactor(factor);
   renderWindow->Render();
+  scheduleVRSync();
   emit statusUpdateMessage(
       tr("Shrink factor: %1").arg(factor, 0, 'f', 2), 0);
 }
@@ -959,7 +1130,33 @@ void MainWindow::onClipSliderChanged(int value) {
 
   selectedPart->applyClipping(actualX);
   renderWindow->Render();
+  scheduleVRSync();
   emit statusUpdateMessage(tr("Clip X: %1").arg(actualX, 0, 'f', 2), 0);
+}
+
+void MainWindow::setVisibilityRecursive(const QModelIndex &index,
+                                        bool visible) {
+  if (!index.isValid())
+    return;
+  ModelPart *part = static_cast<ModelPart *>(index.internalPointer());
+  if (!part)
+    return;
+
+  /* Route through ModelPartList::setData so the tree view repaints
+   * the "Visible?" column. setData internally calls part->set(1, ...)
+   * which keeps m_itemData and the isVisible flag in sync, then
+   * emits dataChanged. We follow up with part->setVisible(visible)
+   * because set() only flips the flag - it doesn't touch the actor.
+   * setVisible() is the single place that calls SetVisibility on the
+   * vtkActor, so calling it explicitly here is what actually hides
+   * the geometry in the desktop renderer. */
+  partList->setData(index.siblingAtColumn(1), visible ? "Yes" : "No",
+                    Qt::EditRole);
+  part->setVisible(visible);
+
+  int rows = partList->rowCount(index);
+  for (int i = 0; i < rows; ++i)
+    setVisibilityRecursive(partList->index(i, 0, index), visible);
 }
 
 void MainWindow::onVisibilityToggled(bool checked) {
@@ -970,19 +1167,22 @@ void MainWindow::onVisibilityToggled(bool checked) {
     return;
   }
   ModelPart *selectedPart = static_cast<ModelPart *>(index.internalPointer());
-  selectedPart->setVisible(checked);
-  partList->setData(index.siblingAtColumn(1), checked ? "Yes" : "No",
-                    Qt::EditRole);
-  if (selectedPart->getActor())
-    selectedPart->getActor()->SetVisibility(checked);
+
+  /* Cascade the toggle into every descendant. This makes folder
+   * rows useful (un-tick "Models/Engine" and the whole assembly
+   * disappears) and keeps individual STL toggles working as
+   * before because leaves have no children to recurse into. */
+  setVisibilityRecursive(index, checked);
+
   renderWindow->Render();
   /* Marksheet: real-time VR update on visibility change. */
-  if (vrThread && vrThread->isRunning()) {
-    vrThread->issueCommand(VRRenderThread::CLEAR_SCENE, 0.0);
-    pushTreeActorsToVR(QModelIndex());
-  }
-  emit statusUpdateMessage(
-      tr(checked ? "Item visible" : "Item hidden"), 0);
+  scheduleVRSync();
+
+  const QString name =
+      selectedPart ? selectedPart->data(0).toString() : tr("(unknown)");
+  emit statusUpdateMessage(checked ? tr("Showing: %1").arg(name)
+                                   : tr("Hiding: %1").arg(name),
+                           0);
 }
 
 void MainWindow::onSyncVRClicked() {
@@ -992,16 +1192,34 @@ void MainWindow::onSyncVRClicked() {
     return;
   }
 
-  /* Drop the current VR scene (keeping the floor) and push a fresh
-   * snapshot of the tree. This is what makes filter changes in the
-   * GUI actually show up in VR (PDF 3.3.3: "change things in the GUI
-   * and the effect is seen in VR, while it is running") - getNewActor
-   * rebuilds the filter chain from the current ModelPart state every
-   * time it is called. */
+  /* Manual button: skip the debounce, sync right now. */
+  doVRSync();
+  emit statusUpdateMessage(tr("Synced current parts to VR"), 0);
+}
+
+void MainWindow::scheduleVRSync() {
+  /* No-op when VR is not running - we never auto-start a session for
+   * the user, only push into a session they explicitly opened. */
+  if (!vrThread || !vrThread->isRunning())
+    return;
+  /* Restart the timer. start() on an active QTimer just resets the
+   * countdown, so a stream of GUI changes (slider drags, multiple
+   * visibility toggles) collapses into one sync once the user pauses. */
+  if (m_vrSyncDebounce)
+    m_vrSyncDebounce->start();
+}
+
+void MainWindow::doVRSync() {
+  if (!vrThread || !vrThread->isRunning())
+    return;
+  /* CLEAR_SCENE drops every model actor in the VR thread (the floor and
+   * skybox are re-added inside the thread), then pushTreeActorsToVR
+   * walks the GUI tree and queues a fresh actor per visible part.
+   * getNewActor() rebuilds the filter chain from the current ModelPart
+   * state on every call - that's what carries colour, shrink, clip,
+   * opacity, and visibility into VR. */
   vrThread->issueCommand(VRRenderThread::CLEAR_SCENE, 0.0);
   pushTreeActorsToVR(QModelIndex());
-
-  emit statusUpdateMessage(tr("Synced current parts to VR"), 0);
 }
 
 void MainWindow::onToggleVRRotation() {
@@ -1438,4 +1656,473 @@ void MainWindow::applyTheme(bool enabled) {
   if (renderWindow) {
     renderWindow->Render();
   }
+}
+
+void MainWindow::onExplodeButtonClicked(bool checked) {
+  /* Lazy-allocate the animation timer the first time the user clicks
+   * the button. 30Hz (~33ms) is plenty smooth for a translation
+   * animation and keeps the VTK render cost off the critical path. */
+  if (!explodeTimer) {
+    explodeTimer = new QTimer(this);
+    explodeTimer->setInterval(33);
+    connect(explodeTimer, &QTimer::timeout, this,
+            &MainWindow::onExplodeAnimTick);
+  }
+
+  /* Re-target the animation. If the user re-clicks mid-animation, we
+   * pick up from the current progress rather than snapping, which
+   * makes the explode/collapse feel responsive. */
+  m_explodeStart = m_explodeProgress;
+  m_explodeTarget = checked ? 1.0 : 0.0;
+  explodeClock.restart();
+  ui->explodeButton->setText(checked ? tr("Collapse") : tr("Explode"));
+
+  if (!explodeTimer->isActive())
+    explodeTimer->start();
+
+  emit statusUpdateMessage(checked ? tr("Exploding parts...")
+                                   : tr("Collapsing parts..."),
+                           0);
+}
+
+void MainWindow::onExplodeModeChanged(int index) {
+  /* Switching axis mid-state: re-apply current progress under the
+   * new mode so the visual snaps to whatever the new direction
+   * means. (E.g. exploded spherical -> X-axis collapses Y/Z.) */
+  m_explodeMode = index;
+  applyExplosion(m_explodeProgress, m_explodeMode);
+  renderWindow->Render();
+
+  /* Push to VR only if we're not in the middle of an animation -
+   * the per-tick handler does its own end-of-anim VR sync. */
+  if (!explodeTimer || !explodeTimer->isActive())
+    scheduleVRSync();
+  emit statusUpdateMessage(
+      tr("Explode mode: %1").arg(ui->explodeModeBox->currentText()), 0);
+}
+
+void MainWindow::onExplodeAnimTick() {
+  /* Linearly interpolate (with a smoothstep ease) from m_explodeStart
+   * to m_explodeTarget over kExplodeDurationMs of wall time. Using
+   * elapsed wall time rather than tick count means the animation
+   * still finishes in ~1s even if the GUI is briefly busy and a
+   * tick or two is dropped. */
+  qint64 elapsed = explodeClock.elapsed();
+  double t = double(elapsed) / double(kExplodeDurationMs);
+  if (t >= 1.0)
+    t = 1.0;
+
+  /* Smoothstep easing: t' = t^2 * (3 - 2t). Slows in/out so the
+   * parts don't snap on takeoff/landing. */
+  double eased = t * t * (3.0 - 2.0 * t);
+  double progress =
+      m_explodeStart + (m_explodeTarget - m_explodeStart) * eased;
+
+  m_explodeProgress = progress;
+  applyExplosion(progress, m_explodeMode);
+  renderWindow->Render();
+
+  if (t >= 1.0) {
+    /* Animation done - stop the timer and push the final state to
+     * VR in one go. Doing this every tick would thrash the VR
+     * thread's actor list. */
+    explodeTimer->stop();
+    scheduleVRSync();
+    emit statusUpdateMessage(
+        m_explodeTarget > 0.5 ? tr("Exploded view ready (%1)")
+                                    .arg(ui->explodeModeBox->currentText())
+                              : tr("Parts back in place"),
+        0);
+  }
+}
+
+void MainWindow::collectExplodeBounds(const QModelIndex &index,
+                                      double bounds[6], bool &any) const {
+  if (index.isValid()) {
+    ModelPart *part = static_cast<ModelPart *>(index.internalPointer());
+    if (part && part->visible() && !part->getStlPath().isEmpty()) {
+      double pb[6];
+      part->getOriginalBounds(pb);
+      /* Skip parts whose bounds were never populated (loadSTL never
+       * succeeded). pb stays at the default {0,0,0,0,0,0} which is
+       * a degenerate point at the origin and would corrupt the union. */
+      bool nonDegenerate = (pb[1] > pb[0]) || (pb[3] > pb[2]) ||
+                           (pb[5] > pb[4]);
+      if (nonDegenerate) {
+        if (!any) {
+          for (int i = 0; i < 6; ++i)
+            bounds[i] = pb[i];
+          any = true;
+        } else {
+          bounds[0] = std::min(bounds[0], pb[0]);
+          bounds[1] = std::max(bounds[1], pb[1]);
+          bounds[2] = std::min(bounds[2], pb[2]);
+          bounds[3] = std::max(bounds[3], pb[3]);
+          bounds[4] = std::min(bounds[4], pb[4]);
+          bounds[5] = std::max(bounds[5], pb[5]);
+        }
+      }
+    }
+  }
+  int rows = partList->rowCount(index);
+  for (int i = 0; i < rows; ++i)
+    collectExplodeBounds(partList->index(i, 0, index), bounds, any);
+}
+
+void MainWindow::translatePartsForExplosion(const QModelIndex &index,
+                                            const double globalCentre[3],
+                                            double diag, double progress,
+                                            int mode) {
+  if (index.isValid()) {
+    ModelPart *part = static_cast<ModelPart *>(index.internalPointer());
+    if (part && !part->getStlPath().isEmpty()) {
+      double pb[6];
+      part->getOriginalBounds(pb);
+      bool nonDegenerate = (pb[1] > pb[0]) || (pb[3] > pb[2]) ||
+                           (pb[5] > pb[4]);
+      if (nonDegenerate) {
+        double cx = 0.5 * (pb[0] + pb[1]);
+        double cy = 0.5 * (pb[2] + pb[3]);
+        double cz = 0.5 * (pb[4] + pb[5]);
+        double dx = cx - globalCentre[0];
+        double dy = cy - globalCentre[1];
+        double dz = cz - globalCentre[2];
+
+        double offX = 0.0, offY = 0.0, offZ = 0.0;
+
+        switch (mode) {
+        case ExplodeSpherical: {
+          /* Each part flies along the unit vector from the global
+           * centre to its own centre, by progress * diagonal. Using
+           * the diagonal as the scale keeps the spread proportional
+           * to the model size so it doesn't fly off-screen on big
+           * assemblies or look pointless on small ones. */
+          double len = std::sqrt(dx * dx + dy * dy + dz * dz);
+          if (len < 1e-9) {
+            /* Part sits exactly on the centre (single-part scene
+             * or symmetric layout). Pick a stable direction so it
+             * still moves visibly. */
+            dx = 1.0;
+            dy = 0.0;
+            dz = 0.0;
+            len = 1.0;
+          }
+          double scale = progress * diag;
+          offX = (dx / len) * scale;
+          offY = (dy / len) * scale;
+          offZ = (dz / len) * scale;
+          break;
+        }
+        case ExplodeX:
+          /* Spread along X only; (P.x - C.x) * progress means at
+           * progress 1 each part is twice as far from centre as
+           * before. Y/Z stay put. */
+          offX = dx * progress;
+          break;
+        case ExplodeY:
+          offY = dy * progress;
+          break;
+        case ExplodeZ:
+          offZ = dz * progress;
+          break;
+        }
+
+        part->setExplodeOffset(offX, offY, offZ);
+      }
+    }
+  }
+  int rows = partList->rowCount(index);
+  for (int i = 0; i < rows; ++i)
+    translatePartsForExplosion(partList->index(i, 0, index), globalCentre,
+                               diag, progress, mode);
+}
+
+void MainWindow::applyExplosion(double progress, int mode) {
+  /* Compute the union of every visible part's original bounds. We
+   * use the cached pre-filter bounds (NOT the actor's runtime
+   * bounds) so that previous explosion offsets and any active
+   * shrink/clip filters don't drift the centre between calls. */
+  double bounds[6] = {0, 0, 0, 0, 0, 0};
+  bool any = false;
+  collectExplodeBounds(QModelIndex(), bounds, any);
+
+  if (!any) {
+    /* Tree is empty / no STL bounds available - nothing to explode. */
+    return;
+  }
+
+  double centre[3] = {0.5 * (bounds[0] + bounds[1]),
+                      0.5 * (bounds[2] + bounds[3]),
+                      0.5 * (bounds[4] + bounds[5])};
+
+  double dx = bounds[1] - bounds[0];
+  double dy = bounds[3] - bounds[2];
+  double dz = bounds[5] - bounds[4];
+  double diag = std::sqrt(dx * dx + dy * dy + dz * dz);
+
+  translatePartsForExplosion(QModelIndex(), centre, diag, progress, mode);
+}
+
+void MainWindow::applyOpacityToTree(const QModelIndex &index,
+                                    double opacity) {
+  if (index.isValid()) {
+    ModelPart *part = static_cast<ModelPart *>(index.internalPointer());
+    if (part && !part->getStlPath().isEmpty())
+      part->setOpacity(opacity);
+  }
+  int rows = partList->rowCount(index);
+  for (int i = 0; i < rows; ++i)
+    applyOpacityToTree(partList->index(i, 0, index), opacity);
+}
+
+void MainWindow::onOpacitySliderChanged(int value) {
+  /* Slider 0..100 maps to 0.0..1.0. Below ~5% the parts vanish into
+   * the background and look like a render bug, so clamp the lower
+   * end to 0.05 - the slider can still go to 0 but visually it stops
+   * at "barely visible" rather than "gone". */
+  double opacity = value / 100.0;
+  if (opacity < 0.05 && value > 0)
+    opacity = 0.05;
+  applyOpacityToTree(QModelIndex(), opacity);
+  renderWindow->Render();
+  scheduleVRSync();
+  emit statusUpdateMessage(
+      value >= 100 ? tr("X-ray off (solid)")
+                   : tr("X-ray opacity: %1%").arg(value),
+      0);
+}
+
+bool MainWindow::eventFilter(QObject *watched, QEvent *event) {
+  /* We only care about mouse events on the VTK render widget. Other
+   * events (or events on other widgets) pass through unchanged. */
+  if (watched == ui->vtkWidget) {
+    if (event->type() == QEvent::MouseButtonPress) {
+      QMouseEvent *me = static_cast<QMouseEvent *>(event);
+      if (me->button() == Qt::LeftButton) {
+        /* Shift+Left = "move this part". We pick the part under the
+         * cursor and consume the event so VTK's trackball doesn't
+         * also rotate the camera during the drag. If the pick misses,
+         * fall through to the normal click/drag tracking. */
+        if (me->modifiers() & Qt::ShiftModifier) {
+          if (startPartDrag(me->pos()))
+            return true;
+        }
+        /* Don't consume the press - VTK's interactor still needs it
+         * to start a rotate/pan if the user goes on to drag. We just
+         * remember where the press happened so we can decide on
+         * release whether this was a click or a drag. */
+        m_pressPos = me->pos();
+        m_pressTracked = true;
+      }
+    } else if (event->type() == QEvent::MouseMove) {
+      if (m_partDragging) {
+        QMouseEvent *me = static_cast<QMouseEvent *>(event);
+        updatePartDrag(me->pos());
+        return true; /* consume so VTK doesn't also pan/rotate */
+      }
+    } else if (event->type() == QEvent::MouseButtonRelease) {
+      QMouseEvent *me = static_cast<QMouseEvent *>(event);
+      if (me->button() == Qt::LeftButton) {
+        if (m_partDragging) {
+          /* Drop the part where the user let go and propagate the
+           * new position into VR. */
+          m_partDragging = false;
+          QString name = m_dragPart ? m_dragPart->data(0).toString()
+                                    : QStringLiteral("(unknown)");
+          m_dragPart = nullptr;
+          scheduleVRSync();
+          emit statusUpdateMessage(
+              tr("Moved: %1 (Shift+drag again to move further)").arg(name), 0);
+          return true;
+        }
+        if (m_pressTracked) {
+          m_pressTracked = false;
+          /* 5px slack: anything more than that is treated as a drag,
+           * which we leave alone (VTK's trackball already rotated
+           * the camera during the move). */
+          QPoint delta = me->pos() - m_pressPos;
+          if (delta.manhattanLength() < 5)
+            pickPartAt(me->pos());
+        }
+      }
+    }
+  }
+  return QMainWindow::eventFilter(watched, event);
+}
+
+bool MainWindow::startPartDrag(const QPoint &pos) {
+  /* Same coord transform as pickPartAt: VTK uses bottom-left + physical
+   * pixels, Qt gives top-left + logical pixels. */
+  const double dpr = ui->vtkWidget->devicePixelRatioF();
+  const int widgetH = ui->vtkWidget->height();
+  const int x = static_cast<int>(pos.x() * dpr);
+  const int y = static_cast<int>((widgetH - pos.y() - 1) * dpr);
+
+  vtkSmartPointer<vtkPropPicker> picker =
+      vtkSmartPointer<vtkPropPicker>::New();
+  if (!picker->Pick(x, y, 0, renderer))
+    return false;
+  vtkActor *picked = picker->GetActor();
+  if (!picked)
+    return false;
+  QModelIndex idx = findIndexForActor(QModelIndex(), picked);
+  if (!idx.isValid())
+    return false;
+  ModelPart *part = static_cast<ModelPart *>(idx.internalPointer());
+  if (!part || !part->getActor())
+    return false;
+
+  /* Mirror pickPartAt: select the picked part so the right panel and
+   * the rest of the toolbox track what the user is dragging. */
+  ui->treeView->setCurrentIndex(idx);
+
+  m_partDragging = true;
+  m_dragPart = part;
+  m_dragStartScreen = pos;
+  part->getExplodeOffset(m_dragStartOffset);
+
+  /* Compute the depth (display-space Z) of the part's centre. We pin
+   * the drag to that depth so screen movement maps to a translation on
+   * a plane parallel to the camera, not into / out of the screen. The
+   * actor's centre = original-bounds centre + current explode offset. */
+  double bounds[6];
+  part->getOriginalBounds(bounds);
+  double cx = (bounds[0] + bounds[1]) / 2.0 + m_dragStartOffset[0];
+  double cy = (bounds[2] + bounds[3]) / 2.0 + m_dragStartOffset[1];
+  double cz = (bounds[4] + bounds[5]) / 2.0 + m_dragStartOffset[2];
+  renderer->SetWorldPoint(cx, cy, cz, 1.0);
+  renderer->WorldToDisplay();
+  double display[3];
+  renderer->GetDisplayPoint(display);
+  m_dragDepth = display[2];
+
+  emit statusUpdateMessage(
+      tr("Dragging %1 - release Shift+Left to drop").arg(part->data(0).toString()),
+      0);
+  return true;
+}
+
+void MainWindow::updatePartDrag(const QPoint &pos) {
+  if (!m_partDragging || !m_dragPart)
+    return;
+
+  const double dpr = ui->vtkWidget->devicePixelRatioF();
+  const int widgetH = ui->vtkWidget->height();
+
+  auto displayToWorld = [&](const QPoint &p, double out[3]) {
+    double sx = p.x() * dpr;
+    double sy = (widgetH - p.y() - 1) * dpr;
+    renderer->SetDisplayPoint(sx, sy, m_dragDepth);
+    renderer->DisplayToWorld();
+    double w[4];
+    renderer->GetWorldPoint(w);
+    /* DisplayToWorld returns homogeneous coords; normalise. */
+    if (w[3] != 0.0) {
+      out[0] = w[0] / w[3];
+      out[1] = w[1] / w[3];
+      out[2] = w[2] / w[3];
+    } else {
+      out[0] = w[0];
+      out[1] = w[1];
+      out[2] = w[2];
+    }
+  };
+
+  double w0[3], wc[3];
+  displayToWorld(m_dragStartScreen, w0);
+  displayToWorld(pos, wc);
+
+  /* Apply the world-space delta on top of the offset captured when the
+   * drag started. setExplodeOffset both stores the value on the part
+   * (so the next VR sync picks it up via getNewActor) and immediately
+   * positions the GUI actor for the live preview. */
+  m_dragPart->setExplodeOffset(m_dragStartOffset[0] + (wc[0] - w0[0]),
+                               m_dragStartOffset[1] + (wc[1] - w0[1]),
+                               m_dragStartOffset[2] + (wc[2] - w0[2]));
+  renderWindow->Render();
+}
+
+QModelIndex MainWindow::findIndexForActor(const QModelIndex &index,
+                                          vtkActor *target) const {
+  if (index.isValid()) {
+    ModelPart *part = static_cast<ModelPart *>(index.internalPointer());
+    if (part && part->getActor().Get() == target)
+      return index;
+  }
+  int rows = partList->rowCount(index);
+  for (int i = 0; i < rows; ++i) {
+    QModelIndex found =
+        findIndexForActor(partList->index(i, 0, index), target);
+    if (found.isValid())
+      return found;
+  }
+  return QModelIndex();
+}
+
+bool MainWindow::pickPartAt(const QPoint &pos) {
+  /* VTK uses bottom-left origin and works in physical pixels;
+   * Qt's QPoint is top-left origin in logical pixels. Translate
+   * before handing the coords to vtkPropPicker, otherwise picking
+   * is offset on HiDPI displays. */
+  const double dpr = ui->vtkWidget->devicePixelRatioF();
+  const int widgetH = ui->vtkWidget->height();
+  const int x = static_cast<int>(pos.x() * dpr);
+  const int y = static_cast<int>((widgetH - pos.y() - 1) * dpr);
+
+  vtkSmartPointer<vtkPropPicker> picker =
+      vtkSmartPointer<vtkPropPicker>::New();
+  /* PropPicker hits the first actor whose bounding rectangle the
+   * ray crosses - that's plenty for "which part did I click on"
+   * and far cheaper than vtkCellPicker (which walks every triangle).
+   * The third arg 0 is z; ignored for screen-space picks. */
+  int hit = picker->Pick(x, y, 0, renderer);
+  if (!hit) {
+    emit statusUpdateMessage(tr("No part under cursor"), 0);
+    return false;
+  }
+
+  vtkActor *picked = picker->GetActor();
+  if (!picked) {
+    emit statusUpdateMessage(tr("Picked something non-pickable"), 0);
+    return false;
+  }
+
+  QModelIndex idx = findIndexForActor(QModelIndex(), picked);
+  if (!idx.isValid()) {
+    /* Could be the orientation gizmo, the floor (VR), or any other
+     * scene actor that doesn't correspond to a tree row. */
+    emit statusUpdateMessage(tr("Picked actor is not a tree part"), 0);
+    return false;
+  }
+
+  /* Drive the same code path a tree click takes - sets currentIndex
+   * AND calls handleTreeClicked so the right panel (sliders,
+   * visibility checkbox, status bar) reflects the new selection.
+   * Change Colour, Item Options, Toggle Visibility etc. all read
+   * currentIndex(), so they immediately operate on the picked part. */
+  ui->treeView->setCurrentIndex(idx);
+  ui->treeView->scrollTo(idx);
+  handleTreeClicked();
+
+  ModelPart *part = static_cast<ModelPart *>(idx.internalPointer());
+  emit statusUpdateMessage(
+      tr("Picked: %1").arg(part ? part->data(0).toString()
+                                  : QStringLiteral("(unknown)")),
+      0);
+  return true;
+}
+
+void MainWindow::onOpacitySolidClicked() {
+  /* Snap to fully opaque. setValue() updates the GUI but does NOT emit
+   * sliderReleased, so we apply the opacity directly and schedule the
+   * VR sync ourselves. The "already at 100" branch covers the case
+   * where a part was loaded mid-X-ray and the slider is at 100 but
+   * the new actor inherited a fractional opacity. */
+  if (ui->opacitySlider->value() == 100)
+    applyOpacityToTree(QModelIndex(), 1.0);
+  else
+    ui->opacitySlider->setValue(100);
+  renderWindow->Render();
+  scheduleVRSync();
+  emit statusUpdateMessage(tr("Opacity reset to solid"), 0);
 }
