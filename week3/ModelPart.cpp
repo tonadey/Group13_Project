@@ -13,7 +13,7 @@
 
 #include <vtkActor.h>
 #include <vtkClipDataSet.h>
-#include <vtkDataSetMapper.h>
+#include <vtkGeometryFilter.h>
 #include <vtkPlane.h>
 #include <vtkPolyData.h>
 #include <vtkPolyDataMapper.h>
@@ -98,8 +98,20 @@ unsigned char ModelPart::getColourG() { return m_G; }
 unsigned char ModelPart::getColourB() { return m_B; }
 
 void ModelPart::setVisible(bool isVisible) {
+  /* Single source of truth for visibility:
+   *   - flip the internal flag
+   *   - mirror it into column 1 of the tree row so the "Visible?"
+   *     column stays accurate (the model still has to emit
+   *     dataChanged separately - that's done in MainWindow via
+   *     ModelPartList::setData)
+   *   - push the same state into the GUI's vtkActor so the model
+   *     actually disappears from the desktop view in real time.
+   * Folder rows have no actor (loadSTL was never called), so we
+   * just gate the SetVisibility call on actor != nullptr. */
   this->isVisible = isVisible;
   set(1, isVisible ? "Yes" : "No");
+  if (actor)
+    actor->SetVisibility(isVisible ? 1 : 0);
 }
 
 bool ModelPart::visible() { return isVisible; }
@@ -118,14 +130,17 @@ void ModelPart::refreshFilters() {
   if (!reader || !mapper)
     return;
 
-  /* Build a chain: reader -> [shrink] -> [clip] -> mapper.
-   * vtkDataSetMapper accepts any vtkDataSet, so the unstructured grid
-   * output of clip/shrink can feed it directly.
+  /* Build a chain: reader -> [shrink] -> [clip] -> [geometry] -> mapper.
+   * The mapper is vtkPolyDataMapper (faster than vtkDataSetMapper for
+   * static STL meshes), so when shrink/clip are active we tail the chain
+   * with vtkGeometryFilter to convert their unstructured-grid output
+   * back to polydata.
    *
    * Slider values (m_shrinkFactor / m_clipX) come from the merged main
    * branch - the GUI's shrink and clip sliders write to those before
    * calling refreshFilters(). */
   vtkAlgorithmOutput *currentOutput = reader->GetOutputPort();
+  bool anyFilter = false;
 
   if (m_shrinkFilter) {
     if (!shrinkFilter)
@@ -133,6 +148,7 @@ void ModelPart::refreshFilters() {
     shrinkFilter->SetInputConnection(currentOutput);
     shrinkFilter->SetShrinkFactor(m_shrinkFactor);
     currentOutput = shrinkFilter->GetOutputPort();
+    anyFilter = true;
   }
 
   if (m_clipFilter) {
@@ -146,6 +162,21 @@ void ModelPart::refreshFilters() {
     clipFilter->SetInputConnection(currentOutput);
     clipFilter->SetClipFunction(clipPlane);
     currentOutput = clipFilter->GetOutputPort();
+    anyFilter = true;
+  }
+
+  if (anyFilter) {
+    if (!geometryFilter)
+      geometryFilter = vtkSmartPointer<vtkGeometryFilter>::New();
+    geometryFilter->SetInputConnection(currentOutput);
+    currentOutput = geometryFilter->GetOutputPort();
+    /* Filter output mutates whenever the slider moves, so the mapper
+     * must re-upload VBOs each render. */
+    mapper->SetStatic(0);
+  } else {
+    /* Pure STL chain: geometry never changes, so let VTK cache the
+     * VBOs once and skip the per-frame upload. Big win at 4000+ parts. */
+    mapper->SetStatic(1);
   }
 
   mapper->SetInputConnection(currentOutput);
@@ -208,7 +239,7 @@ bool ModelPart::loadSTL(QString fileName, QString *errorMsg) {
   }
 
   if (!mapper)
-    mapper = vtkSmartPointer<vtkDataSetMapper>::New();
+    mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
   mapper->SetInputConnection(reader->GetOutputPort());
 
   if (!actor)
@@ -219,6 +250,7 @@ bool ModelPart::loadSTL(QString fileName, QString *errorMsg) {
    * the actor's runtime bounds. (From origin/Toni clip-fix.) */
   actor->GetBounds(originalBounds);
   actor->GetProperty()->SetColor(m_R / 255.0, m_G / 255.0, m_B / 255.0);
+  actor->GetProperty()->SetOpacity(m_opacity);
   actor->SetVisibility(isVisible);
 
   refreshFilters();
@@ -248,41 +280,78 @@ vtkSmartPointer<vtkActor> ModelPart::getNewActor() {
    * GUI's slider changes are reflected the next time the user clicks
    * Sync VR.
    *
-   * vtkDataSetMapper is used (not vtkPolyDataMapper) because the
-   * outputs of vtkClipDataSet / vtkShrinkFilter are vtkUnstructuredGrid,
-   * which vtkPolyDataMapper would refuse. Source stays as the same
-   * vtkSTLReader so we don't re-parse the STL file. */
-  vtkSmartPointer<vtkDataSetMapper> newMapper =
-      vtkSmartPointer<vtkDataSetMapper>::New();
+   * Mapper is vtkPolyDataMapper for speed; when shrink/clip are active
+   * (their output is vtkUnstructuredGrid) we tail the chain with
+   * vtkGeometryFilter to convert back to polydata. Source stays as the
+   * same vtkSTLReader so we don't re-parse the STL file. */
+  vtkSmartPointer<vtkPolyDataMapper> newMapper =
+      vtkSmartPointer<vtkPolyDataMapper>::New();
+
+  /* Hoist the filter smart pointers out of the if-blocks so they stay
+   * alive until the function returns. vtkAlgorithmOutput* (currentOutput)
+   * is a raw pointer owned by its producer; the producer is only kept
+   * alive by the next filter/mapper's SetInputConnection AFTER that
+   * call returns. So if we let sf/cf go out of scope before connecting
+   * the next stage, the producer is destroyed and currentOutput dangles
+   * - which is what crashed VR sync on heavy scenes (3M+ tri parts with
+   * shrink/clip enabled). */
+  vtkSmartPointer<vtkShrinkFilter> sf;
+  vtkSmartPointer<vtkPlane> plane;
+  vtkSmartPointer<vtkClipDataSet> cf;
+  vtkSmartPointer<vtkGeometryFilter> gf;
 
   vtkAlgorithmOutput *currentOutput = reader->GetOutputPort();
+  bool anyFilter = false;
 
   if (m_shrinkFilter) {
-    vtkSmartPointer<vtkShrinkFilter> sf =
-        vtkSmartPointer<vtkShrinkFilter>::New();
+    sf = vtkSmartPointer<vtkShrinkFilter>::New();
     sf->SetInputConnection(currentOutput);
     sf->SetShrinkFactor(m_shrinkFactor);
     currentOutput = sf->GetOutputPort();
-    /* sf is kept alive by the mapper's input connection holding a
-     * reference to the algorithm via VTK's pipeline executive. */
+    anyFilter = true;
   }
 
   if (m_clipFilter) {
-    vtkSmartPointer<vtkPlane> plane = vtkSmartPointer<vtkPlane>::New();
+    plane = vtkSmartPointer<vtkPlane>::New();
     plane->SetOrigin(m_clipX, 0.0, 0.0);
     plane->SetNormal(1.0, 0.0, 0.0);
 
-    vtkSmartPointer<vtkClipDataSet> cf =
-        vtkSmartPointer<vtkClipDataSet>::New();
+    cf = vtkSmartPointer<vtkClipDataSet>::New();
     cf->SetInputConnection(currentOutput);
     cf->SetClipFunction(plane);
     currentOutput = cf->GetOutputPort();
+    anyFilter = true;
+  }
+
+  if (anyFilter) {
+    gf = vtkSmartPointer<vtkGeometryFilter>::New();
+    gf->SetInputConnection(currentOutput);
+    currentOutput = gf->GetOutputPort();
+  } else {
+    /* No filters: STL geometry is immutable for the lifetime of this
+     * VR actor, so let the mapper cache its VBOs. */
+    newMapper->SetStatic(1);
   }
 
   newMapper->SetInputConnection(currentOutput);
+  /* Once SetInputConnection has been called, newMapper's executive holds
+   * a strong reference to the chain (gf -> cf -> sf -> reader), so the
+   * function-scope smart pointers above are safe to destruct on return:
+   * the chain survives via the mapper -> actor reference graph. */
 
   vtkSmartPointer<vtkActor> newActor = vtkSmartPointer<vtkActor>::New();
   newActor->SetMapper(newMapper);
+
+  /* Mirror the GUI's spherical-explode translation onto the VR actor.
+   * addActorOffline() calls RotateX(-90) before AddPosition()ing the
+   * VR base offset, which rotates a GUI-space vector (x, y, z) into
+   * (x, z, -y) in VR space. Apply that same rotation to the explode
+   * offset so the radial directions stay consistent between the two
+   * views. */
+  double vrExplodeX = m_explodeOffset[0];
+  double vrExplodeY = m_explodeOffset[2];
+  double vrExplodeZ = -m_explodeOffset[1];
+  newActor->SetPosition(vrExplodeX, vrExplodeY, vrExplodeZ);
 
   /* Each actor must own its own vtkProperty. Sharing the GUI actor's
    * property across two render windows is a data race - the GUI thread
@@ -291,6 +360,7 @@ vtkSmartPointer<vtkActor> ModelPart::getNewActor() {
    * current ModelPart state, which is how GUI changes propagate. */
   vtkProperty *prop = newActor->GetProperty();
   prop->SetColor(m_R / 255.0, m_G / 255.0, m_B / 255.0);
+  prop->SetOpacity(m_opacity);
   prop->SetAmbient(0.3);
   prop->SetDiffuse(0.8);
   prop->SetSpecular(0.3);
@@ -303,4 +373,31 @@ vtkSmartPointer<vtkActor> ModelPart::getNewActor() {
 void ModelPart::getOriginalBounds(double bounds[6]) const {
   for (int i = 0; i < 6; ++i)
     bounds[i] = originalBounds[i];
+}
+
+void ModelPart::setExplodeOffset(double dx, double dy, double dz) {
+  m_explodeOffset[0] = dx;
+  m_explodeOffset[1] = dy;
+  m_explodeOffset[2] = dz;
+  if (actor)
+    actor->SetPosition(dx, dy, dz);
+}
+
+void ModelPart::getExplodeOffset(double offset[3]) const {
+  offset[0] = m_explodeOffset[0];
+  offset[1] = m_explodeOffset[1];
+  offset[2] = m_explodeOffset[2];
+}
+
+void ModelPart::setOpacity(double opacity) {
+  /* Clamp to [0..1] - VTK accepts > 1 silently but it has no visual
+   * effect and just papers over GUI bugs. Clamping here means
+   * MainWindow can pass slider/100.0 directly without worrying. */
+  if (opacity < 0.0)
+    opacity = 0.0;
+  else if (opacity > 1.0)
+    opacity = 1.0;
+  m_opacity = opacity;
+  if (actor)
+    actor->GetProperty()->SetOpacity(opacity);
 }
