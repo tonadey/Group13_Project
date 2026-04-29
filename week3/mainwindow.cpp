@@ -1426,6 +1426,7 @@ void MainWindow::applyTheme(bool enabled) {
     qApp->setStyleSheet("");
     this->setStyleSheet(originalStyleSheet);
 
+
     if (renderer) {
       renderer->SetBackground(0.74, 0.77, 0.82);
       renderer->SetBackground2(0.18, 0.22, 0.30);
