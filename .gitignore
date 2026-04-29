@@ -373,7 +373,7 @@ build/
 *.vcxproj
 *.vcxproj.filters
 *.vcxproj.user
-.qt/*
+.qt/
 
 # Root ignores
 /.qt/
