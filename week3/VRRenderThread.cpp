@@ -21,9 +21,9 @@
 
 #include <vtkCamera.h>
 #include <vtkHDRReader.h>
-#include <vtkImageFlip.h>
 #include <vtkLight.h>
 #include <vtkOpenVRCamera.h>
+#include <vtkOpenVRInteractorStyle.h>
 #include <vtkOpenVRRenderWindow.h>
 #include <vtkOpenVRRenderWindowInteractor.h>
 #include <vtkOpenVRRenderer.h>
@@ -198,17 +198,16 @@ void VRRenderThread::run() {
     hdr->SetFileName(skyFile.toUtf8().constData());
     hdr->Update();
 
-    /* vtkHDRReader returns the image upside-down relative to what
-     * vtkSkybox expects; flipping on Y aligns the horizon. */
-    auto flip = vtkSmartPointer<vtkImageFlip>::New();
-    flip->SetInputConnection(hdr->GetOutputPort());
-    flip->SetFilteredAxis(1);
-
+    /* Feed the HDRI straight to the texture: vtkHDRReader's output
+     * already matches vtkSkybox's expected orientation. We used to
+     * pipe through a Y-axis vtkImageFlip here, but that double-
+     * flipped the image and dropped the floor texture onto the
+     * ceiling. */
     auto envTex = vtkSmartPointer<vtkTexture>::New();
     envTex->SetColorModeToDirectScalars();
     envTex->MipmapOn();
     envTex->InterpolateOn();
-    envTex->SetInputConnection(flip->GetOutputPort());
+    envTex->SetInputConnection(hdr->GetOutputPort());
 
     skybox = vtkSmartPointer<vtkSkybox>::New();
     skybox->SetTexture(envTex);
@@ -305,6 +304,22 @@ void VRRenderThread::run() {
 
   interactor = vtkSmartPointer<vtkOpenVRRenderWindowInteractor>::New();
   interactor->SetRenderWindow(window);
+
+  /* Marksheet (Basic Functionality 20%): "The hand controllers work for
+   * dragging parts within VR". The default trackball style only knows
+   * about mouse/keyboard - swap in the OpenVR-aware style so the SteamVR
+   * controllers actually do something. The mappings come from the
+   * vtk_openvr_actions.json + per-controller bindings that CMake's
+   * VRBindings target copies next to the exe:
+   *   - Trigger    -> Pick3D            (point + pull -> select an actor)
+   *   - Grip       -> PositionProp3D    (squeeze -> grab + move actor)
+   *   - Trackpad   -> teleport / menu   (built into the style)
+   * Floor and skybox are PickableOff()'d above so the user can't
+   * accidentally pick up the room. */
+  vtkSmartPointer<vtkOpenVRInteractorStyle> vrStyle =
+      vtkSmartPointer<vtkOpenVRInteractorStyle>::New();
+  interactor->SetInteractorStyle(vrStyle);
+
   interactor->Initialize();
 
   qDebug() << "VR run(): pipeline ready, calling first Render()";
