@@ -16,8 +16,9 @@
 
 #include <vtkActor.h>
 #include <vtkClipDataSet.h>
-#include <vtkDataSetMapper.h>
+#include <vtkGeometryFilter.h>
 #include <vtkPlane.h>
+#include <vtkPolyDataMapper.h>
 #include <vtkProperty.h>
 #include <vtkSTLReader.h>
 #include <vtkShrinkFilter.h>
@@ -75,6 +76,20 @@ public:
    *  cause the slider to lose travel after the first drag. */
   void getOriginalBounds(double bounds[6]) const;
 
+  /** 360 / spherical explode offset. Stored on the part so that
+   *  getNewActor() (used to push a fresh actor into the VR thread)
+   *  can apply the same translation that the GUI actor already has,
+   *  keeping the explosion view in sync between desktop and headset. */
+  void setExplodeOffset(double dx, double dy, double dz);
+  void getExplodeOffset(double offset[3]) const;
+
+  /** X-ray / per-part opacity in [0..1]. 1.0 = fully opaque (default),
+   *  0.0 = fully transparent. The value is cached on the part so any
+   *  fresh actor (loadSTL or getNewActor for VR) inherits it instead
+   *  of resetting to opaque every time the user reloads / re-syncs. */
+  void setOpacity(double opacity);
+  double getOpacity() const { return m_opacity; }
+
   /** Rebuild the mapper input chain (reader -> [filters] -> mapper)
    *  according to the current filter flags. */
   void refreshFilters();
@@ -111,8 +126,17 @@ private:
    * hand them to the clip slider. */
   double originalBounds[6] = {0, 0, 0, 0, 0, 0};
 
+  /* 360-degree explosion translation, in the GUI scene's coordinate
+   * frame. (0,0,0) means no explosion. Driven by the explodeSlider
+   * in MainWindow. */
+  double m_explodeOffset[3] = {0.0, 0.0, 0.0};
+
+  /* X-ray opacity in [0..1]. Driven by the Opacity slider in
+   * MainWindow's right-hand panel. 1.0 = solid (default). */
+  double m_opacity = 1.0;
+
   vtkSmartPointer<vtkSTLReader> reader;
-  vtkSmartPointer<vtkDataSetMapper> mapper;
+  vtkSmartPointer<vtkPolyDataMapper> mapper;
   vtkSmartPointer<vtkActor> actor;
 
   /* Filter pipeline objects, kept as members so they remain alive while
@@ -120,6 +144,11 @@ private:
   vtkSmartPointer<vtkShrinkFilter> shrinkFilter;
   vtkSmartPointer<vtkClipDataSet> clipFilter;
   vtkSmartPointer<vtkPlane> clipPlane;
+  /* Tail of the filter chain when shrink/clip are active: their output
+   * is vtkUnstructuredGrid, but we render through vtkPolyDataMapper
+   * (much faster than vtkDataSetMapper for static STL meshes), so we
+   * convert back to polydata here before feeding the mapper. */
+  vtkSmartPointer<vtkGeometryFilter> geometryFilter;
 };
 
 #endif

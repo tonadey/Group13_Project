@@ -13,6 +13,7 @@ find_package(VTK REQUIRED
     CommonDataModel
     FiltersCore
     FiltersGeneral
+    FiltersGeometry
     RenderingCore
     RenderingOpenGL2
     RenderingAnnotation
