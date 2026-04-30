@@ -20,25 +20,10 @@ It extends the individual Qt/VTK worksheets by adding:
 ## Features
 
 ### Basic Application Features
-- Qt‑based GUI  
-- TreeView for model organisation  
-- Status bar feedback  
-- Reset view, colour picker, visibility toggles  
+- CAD Loading and editing 
+- VR Functionality 
 
-### CAD Loading
-- Load individual STL files  
-- Load multiple models at once  
-- Optional: load all STL files from a directory  
-
-### CAD Editing
-- Rename model parts  
-- Change colour  
-- Toggle visibility  
-- Apply filters:
-  - Clip filter  
-  - Shrink filter  
-
-### 🔹 VR Functionality
+### VR Functionality
 - Start/stop VR session  
 - Independent VR rendering thread  
 - Model interaction using VR controllers  
