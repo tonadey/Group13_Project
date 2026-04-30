@@ -1,3 +1,8 @@
+/**
+ * @file mainwindow.cpp
+ * @brief Implements the main Qt window, VTK desktop renderer, and VR controls.
+ */
+
 #include "mainwindow.h"
 #include "OptionDialog.h"
 #include "ui_mainwindow.h"
@@ -51,6 +56,10 @@
 #include <vtkWindowToImageFilter.h>
 #include <vtkPNGWriter.h>
 
+/**
+ * @brief Builds the UI, connects controls, and initialises the VTK scene.
+ * @param parent Optional parent widget.
+ */
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), ui(new Ui::MainWindow), vrThread(nullptr) {
   ui->setupUi(this);
@@ -319,6 +328,9 @@ MainWindow::MainWindow(QWidget *parent)
   emit statusUpdateMessage(tr("Ready"), 0);
 }
 
+/**
+ * @brief Stops any running VR thread and releases the generated UI.
+ */
 MainWindow::~MainWindow() {
   /* Make sure the VR thread is stopped before any of its dependencies
    * (renderer, actors held by ModelParts) get destroyed. */
@@ -333,6 +345,10 @@ MainWindow::~MainWindow() {
   delete partList;
 }
 
+/**
+ * @brief Confirms shutdown when VR is active and then closes safely.
+ * @param event Qt close event.
+ */
 void MainWindow::closeEvent(QCloseEvent *event) {
   /* If a VR session is live, ask before tearing it down. Otherwise just
    * stop it silently and proceed. Either way, wait with a short timeout
@@ -358,6 +374,9 @@ void MainWindow::closeEvent(QCloseEvent *event) {
   event->accept();
 }
 
+/**
+ * @brief Updates the title bar to reflect whether VR is running.
+ */
 void MainWindow::refreshWindowTitle() {
   const QString base = tr("Group 13 - VR CAD Viewer");
   if (vrThread && vrThread->isRunning())
@@ -366,6 +385,11 @@ void MainWindow::refreshWindowTitle() {
     setWindowTitle(base);
 }
 
+/**
+ * @brief Recursively totals triangle counts for visible loaded parts.
+ * @param index Tree index to start from; invalid means the root.
+ * @return Total number of visible triangles.
+ */
 vtkIdType MainWindow::countVisibleTriangles(const QModelIndex &index) const {
   vtkIdType total = 0;
   if (index.isValid()) {
@@ -379,6 +403,9 @@ vtkIdType MainWindow::countVisibleTriangles(const QModelIndex &index) const {
   return total;
 }
 
+/**
+ * @brief Synchronises right-panel controls with the selected tree item.
+ */
 void MainWindow::handleTreeClicked() {
   QModelIndex index = ui->treeView->currentIndex();
   if (!index.isValid())
@@ -408,6 +435,9 @@ void MainWindow::handleTreeClicked() {
   emit statusUpdateMessage(QString("Selected: ") + text, 0);
 }
 
+/**
+ * @brief Opens the item options dialog and applies accepted edits.
+ */
 void MainWindow::openItemOptions() {
   QModelIndex index = ui->treeView->currentIndex();
 
@@ -467,6 +497,9 @@ void MainWindow::openItemOptions() {
   emit statusUpdateMessage(QString("Updated item: ") + dialog.getName(), 0);
 }
 
+/**
+ * @brief Opens one STL file and inserts it below the selected tree item.
+ */
 void MainWindow::on_actionOpen_File_triggered() {
   QModelIndex index = ui->treeView->currentIndex();
 
@@ -522,6 +555,9 @@ void MainWindow::on_actionOpen_File_triggered() {
   emit statusUpdateMessage(QString("Opened file: ") + fileInfo.fileName(), 0);
 }
 
+/**
+ * @brief Opens one or more folders and imports all STL files they contain.
+ */
 void MainWindow::on_actionOpen_Folder_triggered() {
   QModelIndex parentIndex = ui->treeView->currentIndex();
 
@@ -764,6 +800,9 @@ void MainWindow::on_actionExit_triggered() {
   QApplication::quit();
 }
 
+/**
+ * @brief Diffs the tree actors against the renderer and updates the scene.
+ */
 void MainWindow::updateRender() {
   /* Build the desired set of actors from the current tree. Folder rows
    * have no actor (loadSTL was never called), so they're naturally
@@ -880,6 +919,9 @@ void MainWindow::on_actionToggle_Clip_triggered() {
   ui->clipSlider->setValue(on ? 50 : 0);
 }
 
+/**
+ * @brief Validates the scene and starts the OpenVR render thread.
+ */
 void MainWindow::on_actionStart_VR_triggered() {
   if (vrThread && vrThread->isRunning()) {
     emit statusUpdateMessage(tr("VR is already running"), 0);
@@ -969,6 +1011,9 @@ void MainWindow::on_actionStart_VR_triggered() {
       0);
 }
 
+/**
+ * @brief Stops and deletes the active VR render thread.
+ */
 void MainWindow::on_actionStop_VR_triggered() {
   if (!vrThread || !vrThread->isRunning()) {
     emit statusUpdateMessage(tr("VR is not running"), 0);
@@ -1087,6 +1132,9 @@ void MainWindow::onLightIntensityChanged(int value) {
   emit statusUpdateMessage(QString("Light intensity: %1").arg(value), 0);
 }
 
+/**
+ * @brief Creates the desktop scene headlight if it does not already exist.
+ */
 void MainWindow::setupLighting() {
   sceneLight = vtkSmartPointer<vtkLight>::New();
   sceneLight->SetLightTypeToHeadlight();
@@ -1095,6 +1143,10 @@ void MainWindow::setupLighting() {
   renderer->SetAmbient(0.2, 0.2, 0.2);
 }
 
+/**
+ * @brief Applies the selected part's shrink filter from the slider value.
+ * @param value Slider value in the range 0 to 100.
+ */
 void MainWindow::onShrinkSliderChanged(int value) {
   QModelIndex index = ui->treeView->currentIndex();
   if (!index.isValid()) {
@@ -1116,6 +1168,10 @@ void MainWindow::onShrinkSliderChanged(int value) {
       tr("Shrink factor: %1").arg(factor, 0, 'f', 2), 0);
 }
 
+/**
+ * @brief Moves the selected part's clip plane from the slider value.
+ * @param value Slider value in the range 0 to 100.
+ */
 void MainWindow::onClipSliderChanged(int value) {
   QModelIndex index = ui->treeView->currentIndex();
   if (!index.isValid()) {
@@ -1154,6 +1210,11 @@ void MainWindow::onClipSliderChanged(int value) {
   emit statusUpdateMessage(tr("Clip X: %1").arg(actualX, 0, 'f', 2), 0);
 }
 
+/**
+ * @brief Applies a visibility state to an item and all descendants.
+ * @param index Tree index to update.
+ * @param visible true to show items, false to hide them.
+ */
 void MainWindow::setVisibilityRecursive(const QModelIndex &index,
                                         bool visible) {
   if (!index.isValid())
@@ -1217,6 +1278,9 @@ void MainWindow::onSyncVRClicked() {
   emit statusUpdateMessage(tr("Synced current parts to VR"), 0);
 }
 
+/**
+ * @brief Debounces a VR scene sync after GUI-side visual changes.
+ */
 void MainWindow::scheduleVRSync() {
   /* No-op when VR is not running - we never auto-start a session for
    * the user, only push into a session they explicitly opened. */
@@ -1229,6 +1293,9 @@ void MainWindow::scheduleVRSync() {
     m_vrSyncDebounce->start();
 }
 
+/**
+ * @brief Rebuilds the VR scene from the current visible tree state.
+ */
 void MainWindow::doVRSync() {
   if (!vrThread || !vrThread->isRunning())
     return;
@@ -1269,6 +1336,11 @@ void MainWindow::onToggleVRRotation() {
       0);
 }
 
+/**
+ * @brief Recursively pushes visible model actors into the VR thread queue.
+ * @param index Tree index to start from; invalid means the root.
+ * @return Number of actors queued.
+ */
 int MainWindow::pushTreeActorsToVR(const QModelIndex &index) {
   if (!vrThread)
     return 0;
@@ -1338,6 +1410,11 @@ void MainWindow::collectTreeStats(const QModelIndex &index, int depth,
     collectTreeStats(partList->index(i, 0, index), depth + 1, out);
 }
 
+/**
+ * @brief Builds a text diagnostic report for VR scene-transfer issues.
+ * @param reason Short reason shown at the top of the report.
+ * @return Multi-line diagnostic text.
+ */
 QString MainWindow::buildVRDiagnostic(const QString &reason) const {
   QString r;
   r += QStringLiteral("=== VR Pipeline Diagnostic ===\n");
@@ -1422,6 +1499,10 @@ QString MainWindow::buildVRDiagnostic(const QString &reason) const {
   return r;
 }
 
+/**
+ * @brief Displays the VR diagnostic report with copy/save actions.
+ * @param reason Short diagnostic reason.
+ */
 void MainWindow::showVRDiagnosticDialog(const QString &reason) {
   const QString report = buildVRDiagnostic(reason);
 
@@ -1483,6 +1564,10 @@ void MainWindow::showVRDiagnosticDialog(const QString &reason) {
 
   dlg.exec();
 }
+/**
+ * @brief Applies either the dark or light application theme.
+ * @param enabled true for dark mode, false for light mode.
+ */
 void MainWindow::applyTheme(bool enabled) {
   darkMode = enabled;
 
@@ -1698,6 +1783,10 @@ void MainWindow::applyTheme(bool enabled) {
   }
 }
 
+/**
+ * @brief Starts the animated explode/collapse transition.
+ * @param checked true to explode, false to collapse.
+ */
 void MainWindow::onExplodeButtonClicked(bool checked) {
   /* Lazy-allocate the animation timer the first time the user clicks
    * the button. 30Hz (~33ms) is plenty smooth for a translation
@@ -1877,6 +1966,11 @@ void MainWindow::translatePartsForExplosion(const QModelIndex &index,
                                diag, progress, mode);
 }
 
+/**
+ * @brief Applies exploded-view offsets to visible model parts.
+ * @param progress Explosion progress from 0.0 to 1.0.
+ * @param mode Direction mode from ExplodeMode.
+ */
 void MainWindow::applyExplosion(double progress, int mode) {
   /* Compute the union of every visible part's original bounds. We
    * use the cached pre-filter bounds (NOT the actor's runtime
@@ -1903,6 +1997,11 @@ void MainWindow::applyExplosion(double progress, int mode) {
   translatePartsForExplosion(QModelIndex(), centre, diag, progress, mode);
 }
 
+/**
+ * @brief Applies a global opacity value to all loaded parts in a subtree.
+ * @param index Tree index to start from.
+ * @param opacity Opacity from 0.0 to 1.0.
+ */
 void MainWindow::applyOpacityToTree(const QModelIndex &index,
                                     double opacity) {
   if (index.isValid()) {
@@ -1932,6 +2031,12 @@ void MainWindow::onOpacitySliderChanged(int value) {
       0);
 }
 
+/**
+ * @brief Handles VTK-widget mouse gestures for picking and dragging parts.
+ * @param watched Object receiving the event.
+ * @param event Qt event to inspect.
+ * @return true if the event was consumed.
+ */
 bool MainWindow::eventFilter(QObject *watched, QEvent *event) {
   /* We only care about mouse events on the VTK render widget. Other
    * events (or events on other widgets) pass through unchanged. */
@@ -1990,6 +2095,11 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event) {
   return QMainWindow::eventFilter(watched, event);
 }
 
+/**
+ * @brief Starts a Shift+left-drag translation for the picked part.
+ * @param pos Mouse position in widget coordinates.
+ * @return true if a draggable part was picked.
+ */
 bool MainWindow::startPartDrag(const QPoint &pos) {
   /* Same coord transform as pickPartAt: VTK uses bottom-left + physical
    * pixels, Qt gives top-left + logical pixels. */
@@ -2082,6 +2192,12 @@ void MainWindow::updatePartDrag(const QPoint &pos) {
   renderWindow->Render();
 }
 
+/**
+ * @brief Finds the tree index that owns a given VTK actor pointer.
+ * @param index Tree index to start searching from.
+ * @param target Actor to find.
+ * @return Matching model index, or invalid if not found.
+ */
 QModelIndex MainWindow::findIndexForActor(const QModelIndex &index,
                                           vtkActor *target) const {
   if (index.isValid()) {
@@ -2099,6 +2215,11 @@ QModelIndex MainWindow::findIndexForActor(const QModelIndex &index,
   return QModelIndex();
 }
 
+/**
+ * @brief Picks the front-most actor under the cursor and selects it in the tree.
+ * @param pos Mouse position in widget coordinates.
+ * @return true when a model actor was selected.
+ */
 bool MainWindow::pickPartAt(const QPoint &pos) {
   /* VTK uses bottom-left origin and works in physical pixels;
    * Qt's QPoint is top-left origin in logical pixels. Translate
@@ -2169,11 +2290,17 @@ void MainWindow::onOpacitySolidClicked() {
 
 
 
+/**
+ * @brief Menu/toolbar entry point for saving a viewport screenshot.
+ */
 void MainWindow::on_actionScreenshot_triggered()
 {
     onScreenshotClicked();
 }
 
+/**
+ * @brief Captures the VTK render window and writes it as a PNG file.
+ */
 void MainWindow::onScreenshotClicked()
 {
     QString fileName = QFileDialog::getSaveFileName(

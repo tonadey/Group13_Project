@@ -25,6 +25,13 @@
 #include <vtkOpenVRRenderer.h>
 #include <vtkSmartPointer.h>
 
+/**
+ * @class VRRenderThread
+ * @brief Owns the VTK/OpenVR render loop on a worker thread.
+ *
+ * The desktop Qt UI remains responsive while this thread manages the headset
+ * renderer, pending actor queue, scene clearing, and simple rotation commands.
+ */
 class VRRenderThread : public QThread {
   Q_OBJECT
 
@@ -39,7 +46,15 @@ public:
    *  feels too small/large. */
   static constexpr double kModelScale = 0.03;
 
+  /**
+   * @brief Constructs the VR render thread.
+   * @param parent Optional QObject parent.
+   */
   explicit VRRenderThread(QObject *parent = nullptr);
+
+  /**
+   * @brief Stops rendering and releases VR resources owned by the thread.
+   */
   ~VRRenderThread() override;
 
   /** Queue an actor to be added to the VR scene the next time the render
@@ -64,6 +79,11 @@ public:
     CLEAR_SCENE
   };
 
+  /**
+   * @brief Queues a command for the VR render loop.
+   * @param cmd Command value from Command.
+   * @param value Optional command value, used by rotation commands.
+   */
   void issueCommand(int cmd, double value = 0.0);
 
   /** Pre-flight check before launching the VR thread. Returns false if

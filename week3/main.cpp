@@ -1,3 +1,8 @@
+/**
+ * @file main.cpp
+ * @brief Application entry point for the Group 13 CAD and VR viewer.
+ */
+
 #include "CrashReporter.h"
 #include "mainwindow.h"
 #include <QApplication>
@@ -11,6 +16,12 @@
 #include <vtkOutputWindow.h>
 #include <vtkSmartPointer.h>
 
+/**
+ * @brief Starts the Qt application, configures VTK, and shows MainWindow.
+ * @param argc Command-line argument count.
+ * @param argv Command-line argument values.
+ * @return Qt application exit code.
+ */
 int main(int argc, char *argv[]) {
   /* Install crash reporter first so anything that goes wrong during VTK /
    * Qt setup is captured in the log and shown to the user. */

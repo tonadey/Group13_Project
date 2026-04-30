@@ -1,10 +1,6 @@
-/**     @file ModelPartList.cpp
- *
- *     EEEE2076 - Software Engineering & VR Project
- *
- *     Template for model part list that will be used to create the trewview.
- *
- *     P Evans 2022
+/**
+ * @file ModelPartList.cpp
+ * @brief Implements the Qt tree model used to display ModelPart objects.
  */
 
 #include "ModelPartList.h"
@@ -12,6 +8,11 @@
 #include <QColor>
 #include <QPixmap>
 
+/**
+ * @brief Creates the model and root header item.
+ * @param data Legacy setup string, currently unused.
+ * @param parent Optional QObject parent.
+ */
 ModelPartList::ModelPartList(const QString &data, QObject *parent)
     : QAbstractItemModel(parent) {
   /* Have option to specify number of visible properties for each item in tree -
@@ -28,6 +29,12 @@ int ModelPartList::columnCount(const QModelIndex &parent) const {
   return rootItem->columnCount();
 }
 
+/**
+ * @brief Provides text and colour-icon data for the QTreeView.
+ * @param index Requested model index.
+ * @param role Qt display role requested by the view.
+ * @return Data for the requested cell or an invalid QVariant.
+ */
 QVariant ModelPartList::data(const QModelIndex &index, int role) const {
   /* If the item index isnt valid, return a new, empty QVariant (QVariant is
    * generic datatype that could be any valid QT class) */
@@ -55,6 +62,13 @@ QVariant ModelPartList::data(const QModelIndex &index, int role) const {
   return QVariant();
 }
 
+/**
+ * @brief Updates a ModelPart column and emits the Qt dataChanged signal.
+ * @param index Edited model index.
+ * @param value New cell value.
+ * @param role Qt edit role.
+ * @return true when the value was accepted.
+ */
 bool ModelPartList::setData(const QModelIndex &index, const QVariant &value,
                             int role) {
   if (role != Qt::EditRole && role != Qt::DisplayRole)
@@ -125,6 +139,12 @@ int ModelPartList::rowCount(const QModelIndex &parent) const {
 
 ModelPart *ModelPartList::getRootItem() { return rootItem; }
 
+/**
+ * @brief Inserts a new ModelPart beneath a parent and notifies the view.
+ * @param parent Parent index; invalid means the root item.
+ * @param data Column data for the new part.
+ * @return Index of the inserted child.
+ */
 QModelIndex ModelPartList::appendChild(QModelIndex &parent,
                                        const QList<QVariant> &data) {
   ModelPart *parentPart;
@@ -151,6 +171,11 @@ QModelIndex ModelPartList::appendChild(QModelIndex &parent,
   return child;
 }
 
+/**
+ * @brief Removes one ModelPart row and notifies the view.
+ * @param index Index of the item to remove.
+ * @return true when the row was removed.
+ */
 bool ModelPartList::removeItem(const QModelIndex &index) {
   if (!index.isValid())
     return false;
