@@ -59,7 +59,7 @@ For any questions regarding this project, you can reach the team members below:
 - **Bekr Alshukry** – @bekrr06  
 - **Oluwatoniloba Adeyinka** – @tonadey  
 - **Xuankai Zhang** – @xuankaimichelezhang  
-- **Zijian Wang** – @Zijian  
+- **Zijian Wang** – @Rodney406  
 
 Project Link: Project Link: https://github.com/tonadey/Group13_Project
 
