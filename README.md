@@ -7,7 +7,7 @@
 - **Zijian Wang**
 
 ---
-# Built With
+## Built With
 
 This project is developed using the following core technologies:
 
@@ -26,7 +26,7 @@ This project is developed using the following core technologies:
 
 ---
 
-# Usage
+## Usage
 
 Once the application is installed and running, you can use it to load, view, and modify CAD models.  
 Below are the main actions available in the software:
@@ -43,7 +43,7 @@ These tools allow you to explore CAD models both on the desktop and in an immers
 
 ---
 
-# Contributing
+## Contributing
 
 This project was developed as part of the EEEE2076 Software Development module and is not open for external contributions.  
 The work is complete and no further updates are planned.
@@ -52,7 +52,7 @@ The work is complete and no further updates are planned.
 
 ---
 
-# Contact
+## Contact
 
 For any questions regarding this project, you can reach the team members below:
 
