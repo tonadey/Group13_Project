@@ -114,10 +114,29 @@ void VRRenderThread::addActorOffline(vtkSmartPointer<vtkActor> actor) {
    * (plevans/EEEE2076/group/VRRenderThread): rotate -90 around X and
    * offset Y/Z so the model sits in front of and below the headset
    * origin, instead of clipping the user. STL files commonly come in
-   * with +Z up; VR space here uses +Y up. */
-  double *ac = actor->GetOrigin();
+   * with +Z up; VR space here uses +Y up.
+   *
+   * Distances and the kModelScale factor are in metres because
+   * vtkOpenVRRenderWindow defaults to PhysicalScale=1 (1 VTK unit =
+   * 1 m). Older builds used mm-scale offsets like -100/-200 here,
+   * which placed the model 100-200 m away — past the default far-clip
+   * plane on most drivers, so the user only saw the skybox.
+   *
+   * The actor may already carry a non-zero Position from
+   * ModelPart::getNewActor (the spherical-explode offset, expressed
+   * in GUI mm units pre-rotated into VR axes). Multiply that by
+   * kModelScale before stacking the base offset so the explode keeps
+   * its visual proportion at the new world scale. */
+  double *p = actor->GetPosition();
+  const double explodeX = p[0] * kModelScale;
+  const double explodeY = p[1] * kModelScale;
+  const double explodeZ = p[2] * kModelScale;
+
   actor->RotateX(-90);
-  actor->AddPosition(-ac[0] + 0, -ac[1] - 100, -ac[2] - 200);
+  actor->SetScale(kModelScale, kModelScale, kModelScale);
+  actor->SetPosition(explodeX + 0.0,
+                     explodeY - 1.5,
+                     explodeZ - 2.5);
 
   QMutexLocker lock(&mutex);
   pendingActors->AddItem(actor);
@@ -240,11 +259,16 @@ void VRRenderThread::run() {
    * below) by tagging it with PickableOff; we filter it out of the
    * rotation loop by keeping a direct pointer rather than walking
    * GetActors(). */
+  /* Floor at Y=-1.5 m below the headset origin, 4 m square. Values are
+   * in metres for the same PhysicalScale=1 reason as addActorOffline;
+   * the previous mm-scale floor (Y=-200, span 2000) sat 200 m down and
+   * 2 km out, which is outside the camera's default far-clip plane so
+   * the floor never appeared in the headset. */
   vtkSmartPointer<vtkPlaneSource> floorSource =
       vtkSmartPointer<vtkPlaneSource>::New();
-  floorSource->SetOrigin(-2000.0, -200.0, -2000.0);
-  floorSource->SetPoint1(2000.0, -200.0, -2000.0);
-  floorSource->SetPoint2(-2000.0, -200.0, 2000.0);
+  floorSource->SetOrigin(-4.0, -1.5, -4.0);
+  floorSource->SetPoint1(4.0, -1.5, -4.0);
+  floorSource->SetPoint2(-4.0, -1.5, 4.0);
   vtkSmartPointer<vtkPolyDataMapper> floorMapper =
       vtkSmartPointer<vtkPolyDataMapper>::New();
   floorMapper->SetInputConnection(floorSource->GetOutputPort());
