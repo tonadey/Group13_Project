@@ -426,6 +426,92 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
              </property>
             </widget>
            </item>
+           <item row="4" column="0">
+            <widget class="QLabel" name="explodeLabel">
+             <property name="text">
+              <string>Explode:</string>
+             </property>
+             <property name="toolTip">
+              <string>One-click animated exploded view. Pick a direction, then click the button to fly the parts apart (or back together) over ~1 second.</string>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="1">
+            <widget class="QComboBox" name="explodeModeBox">
+             <property name="toolTip">
+              <string>Direction for the exploded view. Spherical = each part flies radially from the model centre. X / Y / Z = parts spread along just that axis.</string>
+             </property>
+             <item>
+              <property name="text">
+               <string>Spherical</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>X-axis</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Y-axis</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Z-axis</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item row="4" column="2">
+            <widget class="QPushButton" name="explodeButton">
+             <property name="text">
+              <string>Explode</string>
+             </property>
+             <property name="checkable">
+              <bool>true</bool>
+             </property>
+             <property name="toolTip">
+              <string>Animate parts apart (or back together). VR auto-syncs at the end of the animation.</string>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="0">
+            <widget class="QLabel" name="opacityLabel">
+             <property name="text">
+              <string>X-ray Opacity:</string>
+             </property>
+             <property name="toolTip">
+              <string>Drag to make every visible part semi-transparent. 100 = solid, 0 = invisible. Lets you see through the outer shell to spot internal geometry.</string>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="1">
+            <widget class="QSlider" name="opacitySlider">
+             <property name="maximum">
+              <number>100</number>
+             </property>
+             <property name="value">
+              <number>100</number>
+             </property>
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="toolTip">
+              <string>Global opacity for every visible part. VR auto-syncs on slider release.</string>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="2">
+            <widget class="QPushButton" name="opacitySolidButton">
+             <property name="text">
+              <string>Solid</string>
+             </property>
+             <property name="toolTip">
+              <string>Snap opacity back to 100% (turn X-ray off in one click).</string>
+             </property>
+            </widget>
+           </item>
           </layout>
          </widget>
         </item>
@@ -515,9 +601,6 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
       </widget>
       <widget class="QWidget" name="rightPanel" native="true">
        <layout class="QVBoxLayout" name="verticalLayout_right">
-        <property name="spacing">
-         <number>0</number>
-        </property>
         <property name="leftMargin">
          <number>0</number>
         </property>
@@ -528,6 +611,9 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
          <number>0</number>
         </property>
         <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <property name="spacing">
          <number>0</number>
         </property>
         <item>

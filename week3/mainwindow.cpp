@@ -79,7 +79,7 @@ MainWindow::MainWindow(QWidget *parent)
   setWindowIcon(QIcon(":/Icons/icons/startVR.png"));
   refreshWindowTitle();
 
- 
+
   ui->actionOpen_Folder->setIcon(QIcon(":/Icons/icons/openfolder.png"));
 
 
@@ -90,8 +90,15 @@ MainWindow::MainWindow(QWidget *parent)
           &MainWindow::on_actionRemove_Item_triggered);
   connect(ui->optionsButton, &QPushButton::released, this,
           &MainWindow::openItemOptions);
+
   //connect(ui->screenshotButton, &QPushButton::released, this,
      // &MainWindow::onScreenshotClicked);
+
+
+  /* Open File / Open Folder live in the File menu and the toolbar - both
+   * routes auto-connect to on_actionOpen_File_triggered /
+   * on_actionOpen_Folder_triggered via setupUi's connectSlotsByName. */
+
 
   /* View-controls widgets */
   connect(ui->resetViewButton, &QPushButton::released, this,
@@ -106,7 +113,9 @@ MainWindow::MainWindow(QWidget *parent)
           &MainWindow::onShrinkSliderChanged);
   connect(ui->clipSlider, &QSlider::valueChanged, this,
           &MainWindow::onClipSliderChanged);
+
  
+
   /* Auto-sync VR after any change. The slider value handlers
    * (onShrinkSliderChanged etc.) call scheduleVRSync() at the end, so
    * every slider tick during a drag schedules a sync. The 100ms
@@ -129,7 +138,8 @@ MainWindow::MainWindow(QWidget *parent)
 
   /* X-ray opacity slider + Solid quick-reset. Slider drives per-tick
    * desktop updates; the VR sync on release is wired earlier with the
-   * shrink/clip sliders to keep all the auto-sync triggers in one place. *///
+
+   * shrink/clip sliders to keep all the auto-sync triggers in one place. */
   connect(ui->opacitySlider, &QSlider::valueChanged, this,
           &MainWindow::onOpacitySliderChanged);
   connect(ui->opacitySolidButton, &QPushButton::released, this,
@@ -2135,6 +2145,7 @@ void MainWindow::onOpacitySolidClicked() {
 }
 
 
+
 void MainWindow::on_actionScreenshot_triggered()
 {
     onScreenshotClicked();
@@ -2177,3 +2188,4 @@ void MainWindow::onScreenshotClicked()
 
     emit statusUpdateMessage(tr("Screenshot saved: %1").arg(fileName), 0);
 }
+
