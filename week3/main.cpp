@@ -5,6 +5,7 @@
 #include <QStandardPaths>
 #include <QSurfaceFormat>
 #include <QVTKOpenGLNativeWidget.h>
+#include <QFont>
 
 #include <vtkFileOutputWindow.h>
 #include <vtkOutputWindow.h>
@@ -39,6 +40,9 @@ int main(int argc, char *argv[]) {
     fileOut->SetFlush(true);
     vtkOutputWindow::SetInstance(fileOut);
   }
+
+  //QFont font("Aharoni", 10);  // font name + size
+  //QApplication::setFont(font);
 
   MainWindow w;
   w.show();

@@ -62,6 +62,8 @@ public slots:
   void on_actionRemove_Item_triggered();
   void on_actionChange_Colour_triggered();
   void on_actionToggle_Visibility_triggered();
+  void on_actionScreenshot_triggered();
+  void onScreenshotClicked();
 
   /* View menu */
   void on_actionReset_View_triggered();

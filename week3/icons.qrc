@@ -16,5 +16,10 @@
 	<file>icons/sync.png</file>
 	<file>icons/backgroundcolor.png</file>
 	<file>icons/modelcolor.png</file>
+	<file>icons/rotatecamera.png</file>
+	<file>icons/shrink.png</file>
+	<file>icons/chop.png</file>
+	<file>icons/exit.png</file>
+	<file>icons/nightmode.png</file>
 </qresource>
 </RCC>

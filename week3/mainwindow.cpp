@@ -47,6 +47,8 @@
 #include <vtkProperty.h>
 #include <vtkRenderer.h>
 #include <vtkTextProperty.h>
+#include <vtkWindowToImageFilter.h>
+#include <vtkPNGWriter.h>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), ui(new Ui::MainWindow), vrThread(nullptr) {
@@ -77,8 +79,9 @@ MainWindow::MainWindow(QWidget *parent)
   setWindowIcon(QIcon(":/Icons/icons/startVR.png"));
   refreshWindowTitle();
 
-  ui->openFolderButton->setIcon(QIcon(":/Icons/icons/openfolder.png")); 
+ 
   ui->actionOpen_Folder->setIcon(QIcon(":/Icons/icons/openfolder.png"));
+
 
   /* Tree-side buttons */
   connect(ui->addItemButton, &QPushButton::released, this,
@@ -87,10 +90,8 @@ MainWindow::MainWindow(QWidget *parent)
           &MainWindow::on_actionRemove_Item_triggered);
   connect(ui->optionsButton, &QPushButton::released, this,
           &MainWindow::openItemOptions);
-
-  /* Open File / Open Folder live in the File menu and the toolbar - both
-   * routes auto-connect to on_actionOpen_File_triggered /
-   * on_actionOpen_Folder_triggered via setupUi's connectSlotsByName. */
+  //connect(ui->screenshotButton, &QPushButton::released, this,
+     // &MainWindow::onScreenshotClicked);
 
   /* View-controls widgets */
   connect(ui->resetViewButton, &QPushButton::released, this,
@@ -105,6 +106,7 @@ MainWindow::MainWindow(QWidget *parent)
           &MainWindow::onShrinkSliderChanged);
   connect(ui->clipSlider, &QSlider::valueChanged, this,
           &MainWindow::onClipSliderChanged);
+ 
   /* Auto-sync VR after any change. The slider value handlers
    * (onShrinkSliderChanged etc.) call scheduleVRSync() at the end, so
    * every slider tick during a drag schedules a sync. The 100ms
@@ -163,14 +165,17 @@ MainWindow::MainWindow(QWidget *parent)
    * step (tree -> getNewActor -> addActorOffline -> drain) actually
    * happened. */
   QAction *diagAction = new QAction(tr("Show VR Diagnostics"), this);
-  QAction *darkModeAction = new QAction(tr("Night Mode"), this);
+  QAction* darkModeAction = new QAction(tr("Night Mode"), this);
   darkModeAction->setCheckable(true);
+
+  darkModeAction->setIcon(QIcon(":/Icons/icons/nightmode.png"));
+
   ui->menuView->addSeparator();
   ui->menuView->addAction(darkModeAction);
 
   connect(darkModeAction, &QAction::toggled, this, [this](bool checked) {
-    applyTheme(checked);
-  });
+      applyTheme(checked);
+      });
   diagAction->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_D));
   diagAction->setShortcutContext(Qt::ApplicationShortcut);
   addAction(diagAction);
@@ -853,7 +858,7 @@ void MainWindow::on_actionToggle_Shrink_triggered() {
    * (0) and the typical 80% shrink (20). Lets users keep the keyboard
    * shortcut while we still ship the continuous slider. */
   bool on = ui->actionToggle_Shrink->isChecked();
-  ui->shrinkSlider->setValue(on ? 20 : 0);
+  ui->shrinkSlider->setValue(on ? 50 : 0);
 }
 
 void MainWindow::on_actionToggle_Clip_triggered() {
@@ -2127,4 +2132,48 @@ void MainWindow::onOpacitySolidClicked() {
   renderWindow->Render();
   scheduleVRSync();
   emit statusUpdateMessage(tr("Opacity reset to solid"), 0);
+}
+
+
+void MainWindow::on_actionScreenshot_triggered()
+{
+    onScreenshotClicked();
+}
+
+void MainWindow::onScreenshotClicked()
+{
+    QString fileName = QFileDialog::getSaveFileName(
+        this,
+        tr("Save Screenshot"),
+        QDir::homePath() + "/cad_view_screenshot.png",
+        tr("PNG Images (*.png)")
+    );
+
+    if (fileName.isEmpty()) {
+        emit statusUpdateMessage(tr("Screenshot cancelled"), 0);
+        return;
+    }
+
+    if (!fileName.endsWith(".png", Qt::CaseInsensitive)) {
+        fileName += ".png";
+    }
+
+    renderWindow->Render();
+
+    vtkSmartPointer<vtkWindowToImageFilter> windowToImage =
+        vtkSmartPointer<vtkWindowToImageFilter>::New();
+
+    windowToImage->SetInput(renderWindow);
+    windowToImage->SetInputBufferTypeToRGBA();
+    windowToImage->ReadFrontBufferOff();
+    windowToImage->Update();
+
+    vtkSmartPointer<vtkPNGWriter> writer =
+        vtkSmartPointer<vtkPNGWriter>::New();
+
+    writer->SetFileName(fileName.toStdString().c_str());
+    writer->SetInputConnection(windowToImage->GetOutputPort());
+    writer->Write();
+
+    emit statusUpdateMessage(tr("Screenshot saved: %1").arg(fileName), 0);
 }
