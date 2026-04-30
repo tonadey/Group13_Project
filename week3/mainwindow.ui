@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1564</width>
-    <height>806</height>
+    <width>1213</width>
+    <height>780</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -211,81 +211,6 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
             </layout>
            </item>
           </layout>
-         </widget>
-        </item>
-        <item>
-         <widget class="QGroupBox" name="loadGroupBox">
-          <property name="title">
-           <string>Load Models</string>
-          </property>
-          <layout class="QVBoxLayout" name="verticalLayout_load">
-           <property name="spacing">
-            <number>3</number>
-           </property>
-           <property name="leftMargin">
-            <number>4</number>
-           </property>
-           <property name="topMargin">
-            <number>2</number>
-           </property>
-           <property name="rightMargin">
-            <number>4</number>
-           </property>
-           <property name="bottomMargin">
-            <number>2</number>
-           </property>
-           <item>
-            <widget class="QPushButton" name="openFileButton">
-             <property name="text">
-              <string>Open STL File...</string>
-             </property>
-             <property name="icon">
-              <iconset>
-               <normaloff>:/Icons/icons/fileopen.png</normaloff>:/Icons/icons/fileopen.png</iconset>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="openFolderButton">
-             <property name="text">
-              <string>Open Folder of STLs...</string>
-             </property>
-             <property name="icon">
-              <iconset>
-               <normaloff>:/Icons/icons/fileopen.png</normaloff>:/Icons/icons/fileopen.png</iconset>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </widget>
-        </item>
-       </layout>
-      </widget>
-      <widget class="QWidget" name="rightPanel" native="true">
-       <layout class="QVBoxLayout" name="verticalLayout_right">
-        <property name="spacing">
-         <number>4</number>
-        </property>
-        <property name="leftMargin">
-         <number>0</number>
-        </property>
-        <property name="topMargin">
-         <number>0</number>
-        </property>
-        <property name="rightMargin">
-         <number>0</number>
-        </property>
-        <property name="bottomMargin">
-         <number>0</number>
-        </property>
-        <item>
-         <widget class="QVTKOpenGLNativeWidget" name="vtkWidget" native="true">
-          <property name="minimumSize">
-           <size>
-            <width>500</width>
-            <height>450</height>
-           </size>
-          </property>
          </widget>
         </item>
         <item>
@@ -632,8 +557,8 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1564</width>
-     <height>25</height>
+     <width>1213</width>
+     <height>26</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -657,6 +582,7 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
     <addaction name="separator"/>
     <addaction name="actionItem_Options"/>
     <addaction name="actionChange_Colour"/>
+    <addaction name="actionChange_Background"/>
     <addaction name="actionToggle_Visibility"/>
    </widget>
    <widget class="QMenu" name="menuView">
@@ -704,8 +630,8 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
    <addaction name="actionOpen_File"/>
    <addaction name="actionOpen_Folder"/>
    <addaction name="actionSave"/>
+   <addaction name="actionScreenshot"/>
    <addaction name="actionPrint"/>
-   <addaction name="actionTake_Screenshot"/>
    <addaction name="separator"/>
    <addaction name="actionStart_VR"/>
    <addaction name="actionStop_VR"/>
@@ -762,6 +688,10 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
    </property>
   </action>
   <action name="actionExit">
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/Icons/icons/exit.png</normaloff>:/Icons/icons/exit.png</iconset>
+   </property>
    <property name="text">
     <string>Exit</string>
    </property>
@@ -826,16 +756,24 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
    <property name="checkable">
     <bool>true</bool>
    </property>
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/Icons/icons/shrink.png</normaloff>:/Icons/icons/shrink.png</iconset>
+   </property>
    <property name="text">
-    <string>Toggle Shrink Filter</string>
+    <string>Toggle Shrink Filter to 50%</string>
    </property>
   </action>
   <action name="actionToggle_Clip">
    <property name="checkable">
     <bool>true</bool>
    </property>
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/Icons/icons/chop.png</normaloff>:/Icons/icons/chop.png</iconset>
+   </property>
    <property name="text">
-    <string>Toggle Clip Filter</string>
+    <string>Toggle Clip Filter to 50%</string>
    </property>
   </action>
   <action name="actionStart_VR">
@@ -877,7 +815,7 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
      <normaloff>:/Icons/icons/modelcolor.png</normaloff>:/Icons/icons/modelcolor.png</iconset>
    </property>
    <property name="text">
-    <string>Change Colour...</string>
+    <string>Change Model Colour</string>
    </property>
    <property name="toolTip">
     <string>Pick a colour for the selected part (works in VR via auto-sync)</string>
@@ -899,6 +837,10 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
    <property name="checkable">
     <bool>true</bool>
    </property>
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/Icons/icons/rotatecamera.png</normaloff>:/Icons/icons/rotatecamera.png</iconset>
+   </property>
    <property name="text">
     <string>Toggle VR Rotation (R)</string>
    </property>
@@ -918,7 +860,7 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
     <string>Push the current GUI scene (filters, colours, visibility) into the running VR session</string>
    </property>
   </action>
-  <action name="actionTake_Screenshot">
+  <action name="actionScreenshot">
    <property name="icon">
     <iconset resource="icons.qrc">
      <normaloff>:/Icons/icons/screenshot.png</normaloff>:/Icons/icons/screenshot.png</iconset>
