@@ -16,3 +16,31 @@ It extends the individual Qt/VTK worksheets by adding:
 - **Doxygen documentation** and **GitHub Pages** hosting
 
 The goal is to produce a stable, professional‑looking CAD viewer that works both on desktop and in VR.
+---
+
+## Features
+
+### Basic Application Features
+- Qt‑based GUI  
+- TreeView for model organisation  
+- Status bar feedback  
+- Reset view, colour picker, visibility toggles  
+
+### CAD Loading
+- Load individual STL files  
+- Load multiple models at once  
+- Optional: load all STL files from a directory  
+
+### CAD Editing
+- Rename model parts  
+- Change colour  
+- Toggle visibility  
+- Apply filters:
+  - Clip filter  
+  - Shrink filter  
+
+### 🔹 VR Functionality
+- Start/stop VR session  
+- Independent VR rendering thread  
+- Model interaction using VR controllers  
+- Real‑time updates from GUI to VR (colour, filters, visibility)
