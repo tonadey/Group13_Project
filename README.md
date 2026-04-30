@@ -1,11 +1,11 @@
-# 📘 Group 13 – VR‑Enabled CAD Viewer  
-### 👥 Team Members
+# Group 13 – VR‑Enabled CAD Viewer  
+### Team Members
 - **Bekr Alshukry**
 - **Oluwatoniloba Adeyinka**
 - **Xuankai Zhang**
 - **Zijian Wang**
 
-## 🧭 Overview
+## Overview
 This project is the Group Design Project for **EEEE2076 – Software Development**.  
 It extends the individual Qt/VTK worksheets by adding:
 
