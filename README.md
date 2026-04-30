@@ -15,7 +15,6 @@ It extends the individual Qt/VTK worksheets by adding:
 - A complete **Windows installer** (NSIS)
 - **Doxygen documentation** and **GitHub Pages** hosting
 
-The goal is to produce a stable, professional‑looking CAD viewer that works both on desktop and in VR.
 ---
 
 ## Features
