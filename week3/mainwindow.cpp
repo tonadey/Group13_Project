@@ -181,6 +181,68 @@ MainWindow::MainWindow(QWidget *parent)
   connect(this, &MainWindow::statusUpdateMessage, ui->statusbar,
           &QStatusBar::showMessage);
 
+  /* Keyboard Shortcuts for main actions.
+   * Standard keys (Ctrl+O, Ctrl+S, Del, etc.) are used where possible. */
+  ui->actionOpen_File->setShortcut(QKeySequence::Open);
+  ui->actionOpen_Folder->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_O));
+  ui->actionSave->setShortcut(QKeySequence::Save);
+  ui->actionPrint->setShortcut(QKeySequence::Print);
+  ui->actionAdd_Item->setShortcut(QKeySequence::New);
+  ui->actionRemove_Item->setShortcut(QKeySequence::Delete);
+  ui->actionItem_Options->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_I));
+  ui->actionChange_Colour->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_C));
+  ui->actionToggle_Visibility->setShortcut(QKeySequence(Qt::Key_V));
+  ui->actionReset_View->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_R));
+  ui->actionStart_VR->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_V));
+  ui->actionStop_VR->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_V));
+  ui->actionSync_VR->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_Y));
+  ui->actionAbout->setShortcut(QKeySequence::HelpContents);
+
+  /* Light intensity shortcuts (+/-) */
+  QAction *incLightAction = new QAction(tr("Increase Light Intensity"), this);
+  incLightAction->setShortcuts({QKeySequence(Qt::Key_Plus), QKeySequence(Qt::Key_Equal)});
+  addAction(incLightAction);
+  connect(incLightAction, &QAction::triggered, this, [this]() {
+    ui->lightSlider->setValue(ui->lightSlider->value() + 5);
+  });
+
+  QAction *decLightAction = new QAction(tr("Decrease Light Intensity"), this);
+  decLightAction->setShortcut(QKeySequence(Qt::Key_Minus));
+  addAction(decLightAction);
+  connect(decLightAction, &QAction::triggered, this, [this]() {
+    ui->lightSlider->setValue(ui->lightSlider->value() - 5);
+  });
+
+  /* Opacity shortcuts ([/]) */
+  QAction *incOpacityAction = new QAction(tr("Increase Opacity"), this);
+  incOpacityAction->setShortcut(QKeySequence(Qt::Key_BracketRight));
+  addAction(incOpacityAction);
+  connect(incOpacityAction, &QAction::triggered, this, [this]() {
+    ui->opacitySlider->setValue(ui->opacitySlider->value() + 5);
+  });
+
+  QAction *decOpacityAction = new QAction(tr("Decrease Opacity"), this);
+  decOpacityAction->setShortcut(QKeySequence(Qt::Key_BracketLeft));
+  addAction(decOpacityAction);
+  connect(decOpacityAction, &QAction::triggered, this, [this]() {
+    ui->opacitySlider->setValue(ui->opacitySlider->value() - 5);
+  });
+
+  /* Explode Factor shortcuts (Shift + [/]) */
+  QAction *incExplodeAction = new QAction(tr("Increase Explode Factor"), this);
+  incExplodeAction->setShortcut(QKeySequence(Qt::SHIFT | Qt::Key_BracketRight));
+  addAction(incExplodeAction);
+  connect(incExplodeAction, &QAction::triggered, this, [this]() {
+    ui->shrinkSlider->setValue(ui->shrinkSlider->value() + 5);
+  });
+
+  QAction *decExplodeAction = new QAction(tr("Decrease Explode Factor"), this);
+  decExplodeAction->setShortcut(QKeySequence(Qt::SHIFT | Qt::Key_BracketLeft));
+  addAction(decExplodeAction);
+  connect(decExplodeAction, &QAction::triggered, this, [this]() {
+    ui->shrinkSlider->setValue(ui->shrinkSlider->value() - 5);
+  });
+
   /* Tree clicks */
   connect(ui->treeView, &QTreeView::clicked, this,
           &MainWindow::handleTreeClicked);
