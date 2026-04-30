@@ -24,40 +24,141 @@
 #include <vtkShrinkFilter.h>
 #include <vtkSmartPointer.h>
 
+/**
+ * @class ModelPart
+ * @brief Tree item and render data for one CAD model part or folder node.
+ *
+ * A ModelPart stores the data shown in the Qt tree model as well as the VTK
+ * pipeline used to render an STL file. Folder nodes can have children without
+ * owning an actor; leaf nodes usually hold the STL reader, mapper, actor, and
+ * filter state.
+ */
 class ModelPart {
 public:
+  /**
+   * @brief Creates a model tree item.
+   * @param data Column data displayed by the tree view.
+   * @param parent Parent item, or nullptr for the root item.
+   */
   ModelPart(const QList<QVariant> &data, ModelPart *parent = nullptr);
+
+  /**
+   * @brief Deletes the item and all child items.
+   */
   ~ModelPart();
 
+  /**
+   * @brief Appends a child item under this item.
+   * @param item Child item to take ownership of.
+   */
   void appendChild(ModelPart *item);
 
-  /** Remove (and delete) the child at given row. */
+  /**
+   * @brief Removes and deletes the child at the given row.
+   * @param row Child row to remove.
+   */
   void removeChild(int row);
 
+  /**
+   * @brief Gets a child by row.
+   * @param row Child row.
+   * @return Child item, or nullptr if the row is invalid.
+   */
   ModelPart *child(int row);
+
+  /**
+   * @brief Gets the number of child items.
+   * @return Child count.
+   */
   int childCount() const;
+
+  /**
+   * @brief Gets the number of columns exposed to the tree model.
+   * @return Column count.
+   */
   int columnCount() const;
+
+  /**
+   * @brief Gets data for a tree column.
+   * @param column Column index.
+   * @return Value stored for the column.
+   */
   QVariant data(int column) const;
+
+  /**
+   * @brief Sets data for a tree column.
+   * @param column Column index.
+   * @param value New value.
+   */
   void set(int column, const QVariant &value);
+
+  /**
+   * @brief Gets this item's parent.
+   * @return Parent item, or nullptr for the root.
+   */
   ModelPart *parentItem();
+
+  /**
+   * @brief Gets this item's row within its parent.
+   * @return Row index.
+   */
   int row() const;
 
+  /**
+   * @brief Sets the actor colour.
+   * @param R Red value in the range 0 to 255.
+   * @param G Green value in the range 0 to 255.
+   * @param B Blue value in the range 0 to 255.
+   */
   void setColour(const unsigned char R, const unsigned char G,
                  const unsigned char B);
+
+  /** @return Red colour component in the range 0 to 255. */
   unsigned char getColourR();
+
+  /** @return Green colour component in the range 0 to 255. */
   unsigned char getColourG();
+
+  /** @return Blue colour component in the range 0 to 255. */
   unsigned char getColourB();
 
+  /**
+   * @brief Shows or hides this part's actor.
+   * @param isVisible true to show the part.
+   */
   void setVisible(bool isVisible);
+
+  /**
+   * @brief Gets whether this part is marked visible.
+   * @return true when visible.
+   */
   bool visible();
 
+  /** @return STL path associated with this part. */
   QString getStlPath() { return m_stlPath; }
+
+  /**
+   * @brief Stores the STL path associated with this part.
+   * @param path STL file path.
+   */
   void setStlPath(QString path) { m_stlPath = path; }
 
-  /** Filter accessors */
+  /**
+   * @brief Enables or disables the clip filter.
+   * @param enabled true to enable clipping.
+   */
   void setClipFilter(bool enabled);
+
+  /** @return true when the clip filter is enabled. */
   bool getClipFilter() const { return m_clipFilter; }
+
+  /**
+   * @brief Enables or disables the shrink filter.
+   * @param enabled true to enable shrinking.
+   */
   void setShrinkFilter(bool enabled);
+
+  /** @return true when the shrink filter is enabled. */
   bool getShrinkFilter() const { return m_shrinkFilter; }
 
   /** Continuous-slider filter controls (merged from main branch).
@@ -65,8 +166,17 @@ public:
    *  as the vtkShrinkFilter factor; applyClipping enables clipping and
    *  positions the clip plane at world-space x. */
   void setShrinkFactor(double factor);
+
+  /**
+   * @brief Moves the clipping plane to the given X coordinate.
+   * @param actualX World-space X coordinate for the clip plane.
+   */
   void applyClipping(double actualX);
+
+  /** @return Current shrink factor. */
   double getShrinkFactor() const { return m_shrinkFactor; }
+
+  /** @return Current clip plane X coordinate. */
   double getClipX() const { return m_clipX; }
 
   /** Bounds captured the moment the STL is loaded, before any clip /
@@ -81,6 +191,11 @@ public:
    *  can apply the same translation that the GUI actor already has,
    *  keeping the explosion view in sync between desktop and headset. */
   void setExplodeOffset(double dx, double dy, double dz);
+
+  /**
+   * @brief Copies the current explode/manual translation offset.
+   * @param offset Output array receiving x, y, and z offsets.
+   */
   void getExplodeOffset(double offset[3]) const;
 
   /** X-ray / per-part opacity in [0..1]. 1.0 = fully opaque (default),
@@ -88,6 +203,8 @@ public:
    *  fresh actor (loadSTL or getNewActor for VR) inherits it instead
    *  of resetting to opaque every time the user reloads / re-syncs. */
   void setOpacity(double opacity);
+
+  /** @return Opacity in the range 0.0 to 1.0. */
   double getOpacity() const { return m_opacity; }
 
   /** Rebuild the mapper input chain (reader -> [filters] -> mapper)
@@ -103,7 +220,16 @@ public:
    *  Used by the GUI to warn before pushing a huge scene into VR. */
   vtkIdType getTriangleCount() const;
 
+  /**
+   * @brief Gets the actor used by the desktop renderer.
+   * @return Current actor, or nullptr if no STL has been loaded.
+   */
   vtkSmartPointer<vtkActor> getActor();
+
+  /**
+   * @brief Builds a fresh actor copy for the VR renderer.
+   * @return New actor with the same mesh, colour, opacity, and transform state.
+   */
   vtkSmartPointer<vtkActor> getNewActor();
 
 private:

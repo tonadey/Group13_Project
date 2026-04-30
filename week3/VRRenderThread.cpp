@@ -35,6 +35,11 @@
 
 #include <openvr.h>
 
+/**
+ * @brief Checks whether OpenVR can start before the render thread is launched.
+ * @param reason Optional output message explaining why VR is unavailable.
+ * @return true when SteamVR/OpenVR and a headset are available.
+ */
 bool VRRenderThread::isVRAvailable(QString *reason) {
   if (!vr::VR_IsRuntimeInstalled()) {
     if (reason)
@@ -75,6 +80,10 @@ bool VRRenderThread::isVRAvailable(QString *reason) {
   return true;
 }
 
+/**
+ * @brief Initialises the thread-safe actor queue and command state.
+ * @param parent Optional QObject parent.
+ */
 VRRenderThread::VRRenderThread(QObject *parent)
     : QThread(parent), endRender(false), clearScene(false), rotateX(0.0),
       rotateY(0.0), rotateZ(0.0) {
@@ -87,11 +96,18 @@ VRRenderThread::VRRenderThread(QObject *parent)
     qCritical() << "VRRenderThread: failed to allocate pendingActors list";
 }
 
+/**
+ * @brief Counts actors waiting to be drained into the VR renderer.
+ * @return Pending actor count, or -1 if the queue is unavailable.
+ */
 int VRRenderThread::pendingActorCount() {
   QMutexLocker lock(&mutex);
   return pendingActors ? pendingActors->GetNumberOfItems() : -1;
 }
 
+/**
+ * @brief Requests a clean shutdown if the render loop is still active.
+ */
 VRRenderThread::~VRRenderThread() {
   /* If the thread is still spinning, ask it to stop and wait. */
   if (isRunning()) {
@@ -100,6 +116,10 @@ VRRenderThread::~VRRenderThread() {
   }
 }
 
+/**
+ * @brief Queues an actor for the VR scene and applies the base VR transform.
+ * @param actor Actor copy created by ModelPart::getNewActor().
+ */
 void VRRenderThread::addActorOffline(vtkSmartPointer<vtkActor> actor) {
   if (!actor) {
     qWarning() << "addActorOffline: refusing null actor";
@@ -144,6 +164,11 @@ void VRRenderThread::addActorOffline(vtkSmartPointer<vtkActor> actor) {
            << pendingActors->GetNumberOfItems();
 }
 
+/**
+ * @brief Stores a command for the render loop to consume on the VR thread.
+ * @param cmd Command enum value.
+ * @param value Optional numeric value used by rotation commands.
+ */
 void VRRenderThread::issueCommand(int cmd, double value) {
   QMutexLocker lock(&mutex);
   switch (cmd) {
@@ -165,6 +190,9 @@ void VRRenderThread::issueCommand(int cmd, double value) {
   }
 }
 
+/**
+ * @brief Builds the OpenVR scene and runs the headset render loop.
+ */
 void VRRenderThread::run() {
   /* --- Build the OpenVR pipeline ON THIS THREAD ---
    * VTK (and OpenGL) are not safe to share across threads, so the renderer,

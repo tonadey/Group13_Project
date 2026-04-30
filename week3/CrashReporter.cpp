@@ -1,3 +1,8 @@
+/**
+ * @file CrashReporter.cpp
+ * @brief Implements crash logging, Qt message capture, and crash dialogs.
+ */
+
 #include "CrashReporter.h"
 
 #include <QApplication>
@@ -37,6 +42,11 @@ QStringList g_ring;
 QString g_logFilePath;
 QtMessageHandler g_previousHandler = nullptr;
 
+/**
+ * @brief Converts a Qt message type to a fixed-width log label.
+ * @param type Qt message severity.
+ * @return Text label for the severity.
+ */
 QString severityTag(QtMsgType type) {
   switch (type) {
   case QtDebugMsg:    return QStringLiteral("DEBUG");
@@ -48,6 +58,10 @@ QString severityTag(QtMsgType type) {
   return QStringLiteral("?    ");
 }
 
+/**
+ * @brief Adds a line to the in-memory ring buffer and log file.
+ * @param line Log line to append.
+ */
 void appendToRingAndFile(const QString &line) {
   QMutexLocker lock(&g_mutex);
   g_ring.append(line);
@@ -68,6 +82,12 @@ QString joinedRing() {
   return g_ring.join(QChar('\n'));
 }
 
+/**
+ * @brief Qt message hook that captures qDebug/qWarning/qCritical output.
+ * @param type Message severity.
+ * @param ctx Source context supplied by Qt.
+ * @param msg Message text.
+ */
 void qtMessageHandler(QtMsgType type, const QMessageLogContext &ctx,
                       const QString &msg) {
   const QString line =
@@ -100,6 +120,9 @@ void qtMessageHandler(QtMsgType type, const QMessageLogContext &ctx,
   }
 }
 
+/**
+ * @brief std::terminate handler used for uncaught C++ exceptions.
+ */
 void terminateHandler() {
   QString details = QObject::tr("Unhandled C++ exception (std::terminate).");
   try {
@@ -124,6 +147,11 @@ void terminateHandler() {
 
 #ifdef Q_OS_WIN
 
+/**
+ * @brief Formats a Windows structured-exception code for display.
+ * @param code Native exception code.
+ * @return Human-readable exception name.
+ */
 QString formatExceptionCode(DWORD code) {
   switch (code) {
   case EXCEPTION_ACCESS_VIOLATION:      return QStringLiteral("ACCESS_VIOLATION");
@@ -139,6 +167,11 @@ QString formatExceptionCode(DWORD code) {
   }
 }
 
+/**
+ * @brief Captures a best-effort native stack trace on Windows.
+ * @param ctx CPU context provided by the SEH exception record.
+ * @return Text stack trace.
+ */
 QString captureStackWalk(CONTEXT *ctx) {
   HANDLE proc = GetCurrentProcess();
   HANDLE thread = GetCurrentThread();
@@ -206,6 +239,11 @@ QString captureStackWalk(CONTEXT *ctx) {
   return out;
 }
 
+/**
+ * @brief Windows SEH crash filter that logs native crashes before exit.
+ * @param ep Native exception details.
+ * @return Exception handling decision for Windows.
+ */
 LONG WINAPI sehFilter(EXCEPTION_POINTERS *ep) {
   const DWORD code = ep->ExceptionRecord->ExceptionCode;
   const void *addr = ep->ExceptionRecord->ExceptionAddress;
@@ -250,8 +288,19 @@ LONG WINAPI sehFilter(EXCEPTION_POINTERS *ep) {
 
 #endif // Q_OS_WIN
 
+/**
+ * @class CrashDialog
+ * @brief Modal Qt dialog that presents crash details and recent log lines.
+ */
 class CrashDialog : public QDialog {
 public:
+  /**
+   * @brief Builds the crash dialog UI.
+   * @param title Dialog title and headline.
+   * @param details Crash summary.
+   * @param log Recent captured log lines.
+   * @param parent Optional parent widget.
+   */
   CrashDialog(const QString &title, const QString &details, const QString &log,
               QWidget *parent = nullptr)
       : QDialog(parent) {
@@ -297,6 +346,9 @@ public:
 
 } // namespace
 
+/**
+ * @brief Installs message handlers and prepares the crash log file.
+ */
 void CrashReporter::install() {
   /* Pick a log file we can actually write to: %LOCALAPPDATA%/Group13_VRViewer
    * (with /tmp-style fallback) so a USB-stick / read-only install still
@@ -323,8 +375,17 @@ void CrashReporter::install() {
 #endif
 }
 
+/**
+ * @brief Returns the path currently used for crash logging.
+ * @return Crash log path.
+ */
 QString CrashReporter::logFilePath() { return g_logFilePath; }
 
+/**
+ * @brief Displays or logs crash details depending on thread safety.
+ * @param title Dialog title.
+ * @param details Crash details.
+ */
 void CrashReporter::showCrashDialog(const QString &title, const QString &details) {
   const QString log = joinedRing();
 
