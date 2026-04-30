@@ -1,6 +1,6 @@
 <!DOCTYPE RCC><RCC version="1.0">
 <qresource prefix="/Icons">
-    <file>icons/help.png</file>
+   	<file>icons/help.png</file>
         <file>icons/help2.png</file>
         <file>icons/openfile.png</file>
         <file>icons/openfolder.png</file>
@@ -12,5 +12,9 @@
 	<file>icons/itemoptions.png</file>
 	<file>icons/additem.png</file>
 	<file>icons/removeitem.png</file>
+	<file>icons/visibility.png</file>
+	<file>icons/sync.png</file>
+	<file>icons/backgroundcolor.png</file>
+	<file>icons/modelcolor.png</file>
 </qresource>
 </RCC>
