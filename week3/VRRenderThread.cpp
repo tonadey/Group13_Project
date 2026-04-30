@@ -21,9 +21,9 @@
 
 #include <vtkCamera.h>
 #include <vtkHDRReader.h>
-#include <vtkImageFlip.h>
 #include <vtkLight.h>
 #include <vtkOpenVRCamera.h>
+#include <vtkOpenVRInteractorStyle.h>
 #include <vtkOpenVRRenderWindow.h>
 #include <vtkOpenVRRenderWindowInteractor.h>
 #include <vtkOpenVRRenderer.h>
@@ -114,10 +114,29 @@ void VRRenderThread::addActorOffline(vtkSmartPointer<vtkActor> actor) {
    * (plevans/EEEE2076/group/VRRenderThread): rotate -90 around X and
    * offset Y/Z so the model sits in front of and below the headset
    * origin, instead of clipping the user. STL files commonly come in
-   * with +Z up; VR space here uses +Y up. */
-  double *ac = actor->GetOrigin();
+   * with +Z up; VR space here uses +Y up.
+   *
+   * Distances and the kModelScale factor are in metres because
+   * vtkOpenVRRenderWindow defaults to PhysicalScale=1 (1 VTK unit =
+   * 1 m). Older builds used mm-scale offsets like -100/-200 here,
+   * which placed the model 100-200 m away — past the default far-clip
+   * plane on most drivers, so the user only saw the skybox.
+   *
+   * The actor may already carry a non-zero Position from
+   * ModelPart::getNewActor (the spherical-explode offset, expressed
+   * in GUI mm units pre-rotated into VR axes). Multiply that by
+   * kModelScale before stacking the base offset so the explode keeps
+   * its visual proportion at the new world scale. */
+  double *p = actor->GetPosition();
+  const double explodeX = p[0] * kModelScale;
+  const double explodeY = p[1] * kModelScale;
+  const double explodeZ = p[2] * kModelScale;
+
   actor->RotateX(-90);
-  actor->AddPosition(-ac[0] + 0, -ac[1] - 100, -ac[2] - 200);
+  actor->SetScale(kModelScale, kModelScale, kModelScale);
+  actor->SetPosition(explodeX + 0.0,
+                     explodeY - 1.5,
+                     explodeZ - 2.5);
 
   QMutexLocker lock(&mutex);
   pendingActors->AddItem(actor);
@@ -198,17 +217,16 @@ void VRRenderThread::run() {
     hdr->SetFileName(skyFile.toUtf8().constData());
     hdr->Update();
 
-    /* vtkHDRReader returns the image upside-down relative to what
-     * vtkSkybox expects; flipping on Y aligns the horizon. */
-    auto flip = vtkSmartPointer<vtkImageFlip>::New();
-    flip->SetInputConnection(hdr->GetOutputPort());
-    flip->SetFilteredAxis(1);
-
+    /* Feed the HDRI straight to the texture: vtkHDRReader's output
+     * already matches vtkSkybox's expected orientation. We used to
+     * pipe through a Y-axis vtkImageFlip here, but that double-
+     * flipped the image and dropped the floor texture onto the
+     * ceiling. */
     auto envTex = vtkSmartPointer<vtkTexture>::New();
     envTex->SetColorModeToDirectScalars();
     envTex->MipmapOn();
     envTex->InterpolateOn();
-    envTex->SetInputConnection(flip->GetOutputPort());
+    envTex->SetInputConnection(hdr->GetOutputPort());
 
     skybox = vtkSmartPointer<vtkSkybox>::New();
     skybox->SetTexture(envTex);
@@ -241,11 +259,16 @@ void VRRenderThread::run() {
    * below) by tagging it with PickableOff; we filter it out of the
    * rotation loop by keeping a direct pointer rather than walking
    * GetActors(). */
+  /* Floor at Y=-1.5 m below the headset origin, 4 m square. Values are
+   * in metres for the same PhysicalScale=1 reason as addActorOffline;
+   * the previous mm-scale floor (Y=-200, span 2000) sat 200 m down and
+   * 2 km out, which is outside the camera's default far-clip plane so
+   * the floor never appeared in the headset. */
   vtkSmartPointer<vtkPlaneSource> floorSource =
       vtkSmartPointer<vtkPlaneSource>::New();
-  floorSource->SetOrigin(-2000.0, -200.0, -2000.0);
-  floorSource->SetPoint1(2000.0, -200.0, -2000.0);
-  floorSource->SetPoint2(-2000.0, -200.0, 2000.0);
+  floorSource->SetOrigin(-4.0, -1.5, -4.0);
+  floorSource->SetPoint1(4.0, -1.5, -4.0);
+  floorSource->SetPoint2(-4.0, -1.5, 4.0);
   vtkSmartPointer<vtkPolyDataMapper> floorMapper =
       vtkSmartPointer<vtkPolyDataMapper>::New();
   floorMapper->SetInputConnection(floorSource->GetOutputPort());
@@ -305,6 +328,22 @@ void VRRenderThread::run() {
 
   interactor = vtkSmartPointer<vtkOpenVRRenderWindowInteractor>::New();
   interactor->SetRenderWindow(window);
+
+  /* Marksheet (Basic Functionality 20%): "The hand controllers work for
+   * dragging parts within VR". The default trackball style only knows
+   * about mouse/keyboard - swap in the OpenVR-aware style so the SteamVR
+   * controllers actually do something. The mappings come from the
+   * vtk_openvr_actions.json + per-controller bindings that CMake's
+   * VRBindings target copies next to the exe:
+   *   - Trigger    -> Pick3D            (point + pull -> select an actor)
+   *   - Grip       -> PositionProp3D    (squeeze -> grab + move actor)
+   *   - Trackpad   -> teleport / menu   (built into the style)
+   * Floor and skybox are PickableOff()'d above so the user can't
+   * accidentally pick up the room. */
+  vtkSmartPointer<vtkOpenVRInteractorStyle> vrStyle =
+      vtkSmartPointer<vtkOpenVRInteractorStyle>::New();
+  interactor->SetInteractorStyle(vrStyle);
+
   interactor->Initialize();
 
   qDebug() << "VR run(): pipeline ready, calling first Render()";
