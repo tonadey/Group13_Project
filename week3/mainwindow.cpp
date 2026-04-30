@@ -127,7 +127,7 @@ MainWindow::MainWindow(QWidget *parent)
 
   /* X-ray opacity slider + Solid quick-reset. Slider drives per-tick
    * desktop updates; the VR sync on release is wired earlier with the
-   * shrink/clip sliders to keep all the auto-sync triggers in one place. */
+   * shrink/clip sliders to keep all the auto-sync triggers in one place. *///
   connect(ui->opacitySlider, &QSlider::valueChanged, this,
           &MainWindow::onOpacitySliderChanged);
   connect(ui->opacitySolidButton, &QPushButton::released, this,
