@@ -29,6 +29,16 @@ class VRRenderThread : public QThread {
   Q_OBJECT
 
 public:
+  /** Per-actor scale applied at add-time. STL files come from the GUI in
+   *  millimetres, but vtkOpenVRRenderWindow treats 1 VTK unit as 1
+   *  metre (PhysicalScale=1.0 by default). Without this conversion an
+   *  ~3000 mm car ends up 3 km wide in the VR world, way past the
+   *  default camera far-clip plane (~1 km), and the user sees only the
+   *  skybox. 0.03 = mm->m with a hero-scale bump so the car reads as
+   *  larger than life in the play-space. Tune up/down if the model
+   *  feels too small/large. */
+  static constexpr double kModelScale = 0.03;
+
   explicit VRRenderThread(QObject *parent = nullptr);
   ~VRRenderThread() override;
 
