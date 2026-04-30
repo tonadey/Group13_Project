@@ -114,6 +114,9 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QHBoxLayout" name="horizontalLayout_main">
+    <property name="spacing">
+     <number>4</number>
+    </property>
     <property name="leftMargin">
      <number>4</number>
     </property>
@@ -126,9 +129,6 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
     <property name="bottomMargin">
      <number>4</number>
     </property>
-    <property name="spacing">
-     <number>4</number>
-    </property>
     <item>
      <widget class="QSplitter" name="mainSplitter">
       <property name="orientation">
@@ -139,6 +139,9 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
       </property>
       <widget class="QWidget" name="leftPanel" native="true">
        <layout class="QVBoxLayout" name="verticalLayout_left">
+        <property name="spacing">
+         <number>4</number>
+        </property>
         <property name="leftMargin">
          <number>0</number>
         </property>
@@ -151,15 +154,15 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
         <property name="bottomMargin">
          <number>0</number>
         </property>
-        <property name="spacing">
-         <number>4</number>
-        </property>
         <item>
          <widget class="QGroupBox" name="treeGroupBox">
           <property name="title">
            <string>Model Parts</string>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_tree">
+           <property name="spacing">
+            <number>3</number>
+           </property>
            <property name="leftMargin">
             <number>4</number>
            </property>
@@ -171,9 +174,6 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
            </property>
            <property name="bottomMargin">
             <number>2</number>
-           </property>
-           <property name="spacing">
-            <number>3</number>
            </property>
            <item>
             <widget class="QTreeView" name="treeView">
@@ -211,6 +211,81 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
             </layout>
            </item>
           </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="loadGroupBox">
+          <property name="title">
+           <string>Load Models</string>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_load">
+           <property name="spacing">
+            <number>3</number>
+           </property>
+           <property name="leftMargin">
+            <number>4</number>
+           </property>
+           <property name="topMargin">
+            <number>2</number>
+           </property>
+           <property name="rightMargin">
+            <number>4</number>
+           </property>
+           <property name="bottomMargin">
+            <number>2</number>
+           </property>
+           <item>
+            <widget class="QPushButton" name="openFileButton">
+             <property name="text">
+              <string>Open STL File...</string>
+             </property>
+             <property name="icon">
+              <iconset>
+               <normaloff>:/Icons/icons/fileopen.png</normaloff>:/Icons/icons/fileopen.png</iconset>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="openFolderButton">
+             <property name="text">
+              <string>Open Folder of STLs...</string>
+             </property>
+             <property name="icon">
+              <iconset>
+               <normaloff>:/Icons/icons/fileopen.png</normaloff>:/Icons/icons/fileopen.png</iconset>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="rightPanel" native="true">
+       <layout class="QVBoxLayout" name="verticalLayout_right">
+        <property name="spacing">
+         <number>4</number>
+        </property>
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="QVTKOpenGLNativeWidget" name="vtkWidget" native="true">
+          <property name="minimumSize">
+           <size>
+            <width>500</width>
+            <height>450</height>
+           </size>
+          </property>
          </widget>
         </item>
         <item>
@@ -283,60 +358,146 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
            </item>
            <item row="2" column="0">
             <widget class="QLabel" name="shrinkLabel">
-             <property name="text">
-              <string>Shrink intensity:</string>
-             </property>
              <property name="toolTip">
               <string>Shrink filter (vtkShrinkFilter): 0 = no shrink, 100 = max shrink. Per-part.</string>
+             </property>
+             <property name="text">
+              <string>Shrink intensity:</string>
              </property>
             </widget>
            </item>
            <item row="2" column="1">
             <widget class="QSlider" name="shrinkSlider">
+             <property name="toolTip">
+              <string>Drag to shrink the selected part. Updates VR via Sync.</string>
+             </property>
              <property name="maximum">
               <number>100</number>
              </property>
              <property name="orientation">
-              <enum>Qt::Horizontal</enum>
-             </property>
-             <property name="toolTip">
-              <string>Drag to shrink the selected part. Updates VR via Sync.</string>
+              <enum>Qt::Orientation::Horizontal</enum>
              </property>
             </widget>
            </item>
            <item row="3" column="0">
             <widget class="QLabel" name="clipLabel">
-             <property name="text">
-              <string>Clip position:</string>
-             </property>
              <property name="toolTip">
               <string>Clip plane along X axis (vtkClipDataSet). 0 = off, 100 = clip past max X. Per-part.</string>
+             </property>
+             <property name="text">
+              <string>Clip position:</string>
              </property>
             </widget>
            </item>
            <item row="3" column="1">
             <widget class="QSlider" name="clipSlider">
+             <property name="toolTip">
+              <string>Drag to slice the selected part. Updates VR via Sync.</string>
+             </property>
              <property name="maximum">
               <number>100</number>
              </property>
              <property name="orientation">
-              <enum>Qt::Horizontal</enum>
-             </property>
-             <property name="toolTip">
-              <string>Drag to slice the selected part. Updates VR via Sync.</string>
+              <enum>Qt::Orientation::Horizontal</enum>
              </property>
             </widget>
            </item>
            <item row="2" column="2">
             <widget class="QCheckBox" name="visibilityCheckBox">
+             <property name="toolTip">
+              <string>Show or hide the selected part in both views</string>
+             </property>
              <property name="text">
               <string>Visible</string>
              </property>
              <property name="checked">
               <bool>true</bool>
              </property>
+            </widget>
+           </item>
+           <item row="4" column="0">
+            <widget class="QLabel" name="explodeLabel">
+             <property name="text">
+              <string>Explode:</string>
+             </property>
              <property name="toolTip">
-              <string>Show or hide the selected part in both views</string>
+              <string>One-click animated exploded view. Pick a direction, then click the button to fly the parts apart (or back together) over ~1 second.</string>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="1">
+            <widget class="QComboBox" name="explodeModeBox">
+             <property name="toolTip">
+              <string>Direction for the exploded view. Spherical = each part flies radially from the model centre. X / Y / Z = parts spread along just that axis.</string>
+             </property>
+             <item>
+              <property name="text">
+               <string>Spherical</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>X-axis</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Y-axis</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Z-axis</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item row="4" column="2">
+            <widget class="QPushButton" name="explodeButton">
+             <property name="text">
+              <string>Explode</string>
+             </property>
+             <property name="checkable">
+              <bool>true</bool>
+             </property>
+             <property name="toolTip">
+              <string>Animate parts apart (or back together). VR auto-syncs at the end of the animation.</string>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="0">
+            <widget class="QLabel" name="opacityLabel">
+             <property name="text">
+              <string>X-ray Opacity:</string>
+             </property>
+             <property name="toolTip">
+              <string>Drag to make every visible part semi-transparent. 100 = solid, 0 = invisible. Lets you see through the outer shell to spot internal geometry.</string>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="1">
+            <widget class="QSlider" name="opacitySlider">
+             <property name="maximum">
+              <number>100</number>
+             </property>
+             <property name="value">
+              <number>100</number>
+             </property>
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="toolTip">
+              <string>Global opacity for every visible part. VR auto-syncs on slider release.</string>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="2">
+            <widget class="QPushButton" name="opacitySolidButton">
+             <property name="text">
+              <string>Solid</string>
+             </property>
+             <property name="toolTip">
+              <string>Snap opacity back to 100% (turn X-ray off in one click).</string>
              </property>
             </widget>
            </item>
@@ -435,6 +596,9 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
            <string>Virtual Reality</string>
           </property>
           <layout class="QHBoxLayout" name="horizontalLayout_vr">
+           <property name="spacing">
+            <number>4</number>
+           </property>
            <property name="leftMargin">
             <number>4</number>
            </property>
@@ -447,16 +611,13 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
            <property name="bottomMargin">
             <number>2</number>
            </property>
-           <property name="spacing">
-            <number>4</number>
-           </property>
            <item>
             <widget class="QPushButton" name="startVRButton">
              <property name="text">
               <string>Start VR</string>
              </property>
              <property name="icon">
-              <iconset resource="icons.qrc">
+              <iconset>
                <normaloff>:/Icons/icons/startVR.png</normaloff>:/Icons/icons/startVR.png</iconset>
              </property>
             </widget>
@@ -467,28 +628,28 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
               <string>Stop VR</string>
              </property>
              <property name="icon">
-              <iconset resource="icons.qrc">
+              <iconset>
                <normaloff>:/Icons/icons/stopVR.png</normaloff>:/Icons/icons/stopVR.png</iconset>
              </property>
             </widget>
            </item>
            <item>
             <widget class="QPushButton" name="vrSyncButton">
-             <property name="text">
-              <string>Sync GUI to VR</string>
-             </property>
              <property name="toolTip">
               <string>Push current scene (filters, colours, visibility) into the running headset</string>
+             </property>
+             <property name="text">
+              <string>Sync GUI to VR</string>
              </property>
             </widget>
            </item>
            <item>
             <widget class="QPushButton" name="vrRotateButton">
-             <property name="text">
-              <string>Rotate (R)</string>
-             </property>
              <property name="toolTip">
               <string>Spin the model around Y axis inside VR. Same as pressing R.</string>
+             </property>
+             <property name="text">
+              <string>Rotate (R)</string>
              </property>
              <property name="checkable">
               <bool>true</bool>
@@ -558,7 +719,7 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
      <x>0</x>
      <y>0</y>
      <width>1200</width>
-     <height>22</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -640,7 +801,7 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
   <action name="actionOpen_File">
    <property name="icon">
     <iconset resource="icons.qrc">
-     <normaloff>:/Icons/icons/fileopen.png</normaloff>:/Icons/icons/fileopen.png</iconset>
+     <normaloff>:/Icons/icons/openfile.png</normaloff>:/Icons/icons/openfile.png</iconset>
    </property>
    <property name="text">
     <string>Open File</string>
@@ -652,7 +813,7 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
   <action name="actionOpen_Folder">
    <property name="icon">
     <iconset resource="icons.qrc">
-     <normaloff>:/Icons/icons/fileopen.png</normaloff>:/Icons/icons/fileopen.png</iconset>
+     <normaloff>:/Icons/icons/openfolder.png</normaloff>:/Icons/icons/openfolder.png</iconset>
    </property>
    <property name="text">
     <string>Open Folder</string>
@@ -664,7 +825,7 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
   <action name="actionSave">
    <property name="icon">
     <iconset resource="icons.qrc">
-     <normaloff>:/Icons/icons/filesave.png</normaloff>:/Icons/icons/filesave.png</iconset>
+     <normaloff>:/Icons/icons/save.png</normaloff>:/Icons/icons/save.png</iconset>
    </property>
    <property name="text">
     <string>Save</string>
@@ -676,7 +837,7 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
   <action name="actionPrint">
    <property name="icon">
     <iconset resource="icons.qrc">
-     <normaloff>:/Icons/icons/print.png</normaloff>:/Icons/icons/print.png</iconset>
+     <normaloff>:/Icons/icons/printer.png</normaloff>:/Icons/icons/printer.png</iconset>
    </property>
    <property name="text">
     <string>Print</string>
@@ -694,6 +855,10 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
    </property>
   </action>
   <action name="actionItem_Options">
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/Icons/icons/itemoptions.png</normaloff>:/Icons/icons/itemoptions.png</iconset>
+   </property>
    <property name="text">
     <string>Item Options</string>
    </property>
@@ -702,6 +867,10 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
    </property>
   </action>
   <action name="actionAdd_Item">
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/Icons/icons/additem.png</normaloff>:/Icons/icons/additem.png</iconset>
+   </property>
    <property name="text">
     <string>Add Item</string>
    </property>
@@ -710,6 +879,10 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
    </property>
   </action>
   <action name="actionRemove_Item">
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/Icons/icons/removeitem.png</normaloff>:/Icons/icons/removeitem.png</iconset>
+   </property>
    <property name="text">
     <string>Remove Item</string>
    </property>
@@ -731,25 +904,25 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
    </property>
   </action>
   <action name="actionToggle_Shrink">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
    <property name="text">
     <string>Toggle Shrink Filter</string>
    </property>
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
   </action>
   <action name="actionToggle_Clip">
-   <property name="text">
-    <string>Toggle Clip Filter</string>
-   </property>
    <property name="checkable">
     <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Toggle Clip Filter</string>
    </property>
   </action>
   <action name="actionStart_VR">
    <property name="icon">
     <iconset resource="icons.qrc">
-     <normaloff>:/Icons/icons/startVR.png</normaloff>:/Icons/icons/startVR.png</iconset>
+     <normaloff>:/Icons/icons/play.png</normaloff>:/Icons/icons/play.png</iconset>
    </property>
    <property name="text">
     <string>Start VR</string>
@@ -761,7 +934,7 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
   <action name="actionStop_VR">
    <property name="icon">
     <iconset resource="icons.qrc">
-     <normaloff>:/Icons/icons/stopVR.png</normaloff>:/Icons/icons/stopVR.png</iconset>
+     <normaloff>:/Icons/icons/stop.png</normaloff>:/Icons/icons/stop.png</iconset>
    </property>
    <property name="text">
     <string>Stop VR</string>
@@ -796,11 +969,11 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
    </property>
   </action>
   <action name="actionToggle_VR_Rotation">
-   <property name="text">
-    <string>Toggle VR Rotation (R)</string>
-   </property>
    <property name="checkable">
     <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Toggle VR Rotation (R)</string>
    </property>
    <property name="toolTip">
     <string>Spin the model around its Y axis inside the headset</string>
