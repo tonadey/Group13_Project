@@ -10,7 +10,6 @@
 ## Built With
 
 This project is developed using the following core technologies:
-
 - **Qt 6** — User interface framework  
 - **VTK 9.4.x** — 3D rendering and geometry processing  
 - **OpenVR** — Virtual reality hardware integration  
@@ -48,8 +47,6 @@ These tools allow you to explore CAD models both on the desktop and in an immers
 This project was developed as part of the EEEE2076 Software Development module and is not open for external contributions.  
 The work is complete and no further updates are planned.
 
-(back to top)
-
 ---
 
 ## Contact
@@ -62,9 +59,5 @@ For any questions regarding this project, you can reach the team members below:
 - **Zijian Wang** – @Rodney406  
 
 Project Link: Project Link: https://github.com/tonadey/Group13_Project
-
-(back to top)
-
- 
 
 ---  
