@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1200</width>
-    <height>780</height>
+    <width>1564</width>
+    <height>806</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -214,7 +214,6 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
          </widget>
         </item>
         <item>
-<<<<<<< HEAD
          <widget class="QGroupBox" name="loadGroupBox">
           <property name="title">
            <string>Load Models</string>
@@ -290,8 +289,6 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
          </widget>
         </item>
         <item>
-=======
->>>>>>> e073538 (VR controller drag, sync improvements, UI rearrangement)
          <widget class="QGroupBox" name="viewGroupBox">
           <property name="title">
            <string>View Controls</string>
@@ -420,11 +417,11 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
            </item>
            <item row="4" column="0">
             <widget class="QLabel" name="explodeLabel">
-             <property name="text">
-              <string>Explode:</string>
-             </property>
              <property name="toolTip">
               <string>One-click animated exploded view. Pick a direction, then click the button to fly the parts apart (or back together) over ~1 second.</string>
+             </property>
+             <property name="text">
+              <string>Explode:</string>
              </property>
             </widget>
            </item>
@@ -457,29 +454,32 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
            </item>
            <item row="4" column="2">
             <widget class="QPushButton" name="explodeButton">
+             <property name="toolTip">
+              <string>Animate parts apart (or back together). VR auto-syncs at the end of the animation.</string>
+             </property>
              <property name="text">
               <string>Explode</string>
              </property>
              <property name="checkable">
               <bool>true</bool>
              </property>
-             <property name="toolTip">
-              <string>Animate parts apart (or back together). VR auto-syncs at the end of the animation.</string>
-             </property>
             </widget>
            </item>
            <item row="5" column="0">
             <widget class="QLabel" name="opacityLabel">
-             <property name="text">
-              <string>X-ray Opacity:</string>
-             </property>
              <property name="toolTip">
               <string>Drag to make every visible part semi-transparent. 100 = solid, 0 = invisible. Lets you see through the outer shell to spot internal geometry.</string>
+             </property>
+             <property name="text">
+              <string>X-ray Opacity:</string>
              </property>
             </widget>
            </item>
            <item row="5" column="1">
             <widget class="QSlider" name="opacitySlider">
+             <property name="toolTip">
+              <string>Global opacity for every visible part. VR auto-syncs on slider release.</string>
+             </property>
              <property name="maximum">
               <number>100</number>
              </property>
@@ -487,20 +487,17 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
               <number>100</number>
              </property>
              <property name="orientation">
-              <enum>Qt::Horizontal</enum>
-             </property>
-             <property name="toolTip">
-              <string>Global opacity for every visible part. VR auto-syncs on slider release.</string>
+              <enum>Qt::Orientation::Horizontal</enum>
              </property>
             </widget>
            </item>
            <item row="5" column="2">
             <widget class="QPushButton" name="opacitySolidButton">
-             <property name="text">
-              <string>Solid</string>
-             </property>
              <property name="toolTip">
               <string>Snap opacity back to 100% (turn X-ray off in one click).</string>
+             </property>
+             <property name="text">
+              <string>Solid</string>
              </property>
             </widget>
            </item>
@@ -593,6 +590,9 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
       </widget>
       <widget class="QWidget" name="rightPanel" native="true">
        <layout class="QVBoxLayout" name="verticalLayout_right">
+        <property name="spacing">
+         <number>0</number>
+        </property>
         <property name="leftMargin">
          <number>0</number>
         </property>
@@ -603,9 +603,6 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
          <number>0</number>
         </property>
         <property name="bottomMargin">
-         <number>0</number>
-        </property>
-        <property name="spacing">
          <number>0</number>
         </property>
         <item>
@@ -635,7 +632,7 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1200</width>
+     <width>1564</width>
      <height>25</height>
     </rect>
    </property>
@@ -708,6 +705,7 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
    <addaction name="actionOpen_Folder"/>
    <addaction name="actionSave"/>
    <addaction name="actionPrint"/>
+   <addaction name="actionTake_Screenshot"/>
    <addaction name="separator"/>
    <addaction name="actionStart_VR"/>
    <addaction name="actionStop_VR"/>
@@ -816,6 +814,10 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
    </property>
   </action>
   <action name="actionChange_Background">
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/Icons/icons/backgroundcolor.png</normaloff>:/Icons/icons/backgroundcolor.png</iconset>
+   </property>
    <property name="text">
     <string>Change Background Colour</string>
    </property>
@@ -870,6 +872,10 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
    </property>
   </action>
   <action name="actionChange_Colour">
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/Icons/icons/modelcolor.png</normaloff>:/Icons/icons/modelcolor.png</iconset>
+   </property>
    <property name="text">
     <string>Change Colour...</string>
    </property>
@@ -878,6 +884,10 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
    </property>
   </action>
   <action name="actionToggle_Visibility">
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/Icons/icons/visibility.png</normaloff>:/Icons/icons/visibility.png</iconset>
+   </property>
    <property name="text">
     <string>Toggle Visibility</string>
    </property>
@@ -897,11 +907,27 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
    </property>
   </action>
   <action name="actionSync_VR">
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/Icons/icons/sync.png</normaloff>:/Icons/icons/sync.png</iconset>
+   </property>
    <property name="text">
     <string>Sync to VR</string>
    </property>
    <property name="toolTip">
     <string>Push the current GUI scene (filters, colours, visibility) into the running VR session</string>
+   </property>
+  </action>
+  <action name="actionTake_Screenshot">
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/Icons/icons/screenshot.png</normaloff>:/Icons/icons/screenshot.png</iconset>
+   </property>
+   <property name="text">
+    <string>Take Screenshot</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::NoRole</enum>
    </property>
   </action>
  </widget>
