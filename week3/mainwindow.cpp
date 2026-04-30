@@ -29,6 +29,7 @@
 #include <QPushButton>
 #include <QSet>
 #include <QStyle>
+#include <QToolBar>
 #include <QTreeView>
 #include <QVBoxLayout>
 #include <functional>
@@ -177,11 +178,14 @@ MainWindow::MainWindow(QWidget *parent)
   QAction *diagAction = new QAction(tr("Show VR Diagnostics"), this);
   QAction* darkModeAction = new QAction(tr("Night Mode"), this);
   darkModeAction->setCheckable(true);
+  darkModeAction->setToolTip(tr("Toggle light and dark mode"));
+  darkModeAction->setStatusTip(tr("Toggle light and dark mode"));
 
   darkModeAction->setIcon(QIcon(":/Icons/icons/nightmode.png"));
 
   ui->menuView->addSeparator();
   ui->menuView->addAction(darkModeAction);
+  ui->mainToolBar->insertAction(ui->actionAbout, darkModeAction);
 
   connect(darkModeAction, &QAction::toggled, this, [this](bool checked) {
       applyTheme(checked);
@@ -1535,6 +1539,20 @@ void MainWindow::applyTheme(bool enabled) {
         spacing: 2px;
         padding: 2px;
       }
+      QToolButton {
+        border: 1px solid transparent;
+        border-radius: 4px;
+        padding: 2px;
+        background: transparent;
+      }
+      QToolButton:hover {
+        background-color: #3c4043;
+        border-color: #5f6368;
+      }
+      QToolButton:checked {
+        background-color: #4a90e2;
+        border-color: #87bce7;
+      }
 
       QPushButton {
         background-color: #3c4043;
@@ -1550,6 +1568,11 @@ void MainWindow::applyTheme(bool enabled) {
       }
       QPushButton:pressed {
         background-color: #5f6368;
+      }
+      QPushButton:checked {
+        background-color: #4a90e2;
+        border-color: #87bce7;
+        color: #ffffff;
       }
       QPushButton:disabled {
         background-color: #2a2b2e;

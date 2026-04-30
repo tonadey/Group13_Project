@@ -15,119 +15,201 @@
   </property>
   <property name="styleSheet">
    <string notr="true">QMainWindow {
-    background: #f4f5f7;
+    background: #eef2f6;
+}
+QWidget#centralwidget {
+    background: #eef2f6;
+}
+QWidget#leftPanel {
+    background: #eef2f6;
 }
 QGroupBox {
     font-weight: 600;
-    color: #2a3142;
-    border: 1px solid #c5cad3;
+    color: #1f2a37;
+    border: 1px solid #d8dee8;
     border-radius: 6px;
     margin-top: 9px;
     padding: 8px 6px 5px 6px;
-    background: #fafbfc;
+    background: #ffffff;
 }
 QGroupBox::title {
     subcontrol-origin: margin;
     subcontrol-position: top left;
     left: 8px;
     padding: 0 5px;
-    color: #1f5fb4;
+    color: #2563a8;
+    background: #ffffff;
 }
 QPushButton {
     padding: 4px 12px;
     min-height: 22px;
-    border: 1px solid #b8bdc7;
+    border: 1px solid #c6d0dc;
     border-radius: 4px;
-    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                                stop:0 #ffffff, stop:1 #e8ecf2);
-    color: #1f2530;
+    background: #f8fafc;
+    color: #182230;
 }
 QPushButton:hover {
-    border-color: #4a90d9;
-    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                                stop:0 #ffffff, stop:1 #d6e4f5);
+    border-color: #3784d8;
+    background: #edf6ff;
 }
 QPushButton:pressed {
-    background: #c2d4ec;
+    background: #d9ecff;
+    border-color: #2563a8;
+}
+QPushButton:checked {
+    background: #2563a8;
+    border-color: #1d4f86;
+    color: #ffffff;
 }
 QPushButton:disabled {
-    color: #a0a4ad;
-    background: #ededed;
+    color: #98a2b3;
+    background: #edf0f3;
+    border-color: #d7dde5;
 }
-QCheckBox { spacing: 5px; }
-QLabel { padding: 0; color: #2a3142; }
+QCheckBox {
+    spacing: 5px;
+    color: #1f2a37;
+}
+QLabel {
+    padding: 0;
+    color: #344054;
+}
 QTreeView {
-    border: 1px solid #c5cad3;
+    border: 1px solid #d8dee8;
     border-radius: 4px;
     background: #ffffff;
-    alternate-background-color: #f5f7fa;
-    selection-background-color: #4a90d9;
+    alternate-background-color: #f6f8fb;
+    selection-background-color: #2563a8;
     selection-color: #ffffff;
+    outline: 0;
 }
-QTreeView::item { padding: 2px 0; }
-QDoubleSpinBox, QSpinBox {
+QTreeView::item {
+    padding: 2px 0;
+}
+QHeaderView::section {
+    background: #f5f7fa;
+    color: #344054;
+    border: none;
+    border-bottom: 1px solid #d8dee8;
+    padding: 4px;
+}
+QLineEdit, QDoubleSpinBox, QSpinBox, QComboBox {
     padding: 1px 2px;
-    min-height: 18px;
-    border: 1px solid #b8bdc7;
+    border: 1px solid #c6d0dc;
     border-radius: 3px;
+    background: #ffffff;
+    color: #182230;
+}
+QLineEdit:focus, QDoubleSpinBox:focus, QSpinBox:focus, QComboBox:focus {
+    border-color: #3784d8;
 }
 QSlider::groove:horizontal {
     height: 5px;
-    background: #d0d4dc;
+    background: #d7dde7;
     border-radius: 2px;
 }
 QSlider::sub-page:horizontal {
-    background: #4a90d9;
+    background: #3784d8;
     border-radius: 2px;
 }
 QSlider::handle:horizontal {
     width: 13px;
     margin: -5px 0;
-    background: qradialgradient(cx:0.5, cy:0.5, radius:0.5,
-                                fx:0.5, fy:0.4,
-                                stop:0 #6aa9e0, stop:1 #2a70b9);
+    background: #ffffff;
     border-radius: 6px;
-    border: 1px solid #1f5fb4;
+    border: 1px solid #3784d8;
 }
 QSlider::handle:horizontal:hover {
-    background: qradialgradient(cx:0.5, cy:0.5, radius:0.5,
-                                fx:0.5, fy:0.4,
-                                stop:0 #87bce7, stop:1 #3a80c9);
+    background: #edf6ff;
+    border-color: #2563a8;
 }
 QStatusBar {
-    background: #2a3142;
-    color: #e8ecf2;
+    background: #1f2a37;
+    color: #e7edf4;
+    border-top: 1px solid #111827;
+}
+QStatusBar::item {
+    border: none;
 }
 QToolBar {
-    border-bottom: 1px solid #c5cad3;
-    background: #fafbfc;
+    border-bottom: 1px solid #d8dee8;
+    background: #ffffff;
     spacing: 2px;
     padding: 2px;
 }
-QMenuBar {
-    background: #fafbfc;
-    border-bottom: 1px solid #c5cad3;
+QToolButton {
+    border: 1px solid transparent;
+    border-radius: 4px;
+    padding: 2px;
+    background: transparent;
 }
-QMenuBar::item:selected { background: #d6e4f5; }
-QMenu { background: #ffffff; border: 1px solid #c5cad3; }
-QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
+QToolButton:hover {
+    border-color: #c6d0dc;
+    background: #f3f8fd;
+}
+QToolButton:checked {
+    border-color: #2563a8;
+    background: #d9ecff;
+}
+QMenuBar {
+    background: #ffffff;
+    color: #1f2a37;
+    border-bottom: 1px solid #d8dee8;
+}
+QMenuBar::item {
+    padding: 4px 10px;
+    background: transparent;
+}
+QMenuBar::item:selected {
+    background: #edf6ff;
+    color: #1d4f86;
+}
+QMenu {
+    background: #ffffff;
+    color: #1f2a37;
+    border: 1px solid #d8dee8;
+}
+QMenu::item {
+    padding: 4px 20px;
+}
+QMenu::item:selected {
+    background: #2563a8;
+    color: #ffffff;
+}
+QMenu::separator {
+    height: 1px;
+    background: #e4e9f0;
+    margin: 4px 8px;
+}
+QSplitter::handle {
+    background: #d8dee8;
+}
+QSplitter::handle:hover {
+    background: #b8c5d4;
+}
+QToolTip {
+    background: #1f2a37;
+    color: #ffffff;
+    border: 1px solid #344054;
+    padding: 4px;
+}</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QHBoxLayout" name="horizontalLayout_main">
     <property name="spacing">
-     <number>4</number>
+     <number>8</number>
     </property>
     <property name="leftMargin">
-     <number>4</number>
+     <number>8</number>
     </property>
     <property name="topMargin">
-     <number>4</number>
+     <number>8</number>
     </property>
     <property name="rightMargin">
-     <number>4</number>
+     <number>8</number>
     </property>
     <property name="bottomMargin">
-     <number>4</number>
+     <number>8</number>
     </property>
     <item>
      <widget class="QSplitter" name="mainSplitter">
@@ -140,7 +222,7 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
       <widget class="QWidget" name="leftPanel" native="true">
        <layout class="QVBoxLayout" name="verticalLayout_left">
         <property name="spacing">
-         <number>4</number>
+         <number>8</number>
         </property>
         <property name="leftMargin">
          <number>0</number>
@@ -161,19 +243,19 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_tree">
            <property name="spacing">
-            <number>3</number>
+           <number>6</number>
            </property>
            <property name="leftMargin">
-            <number>4</number>
+            <number>8</number>
            </property>
            <property name="topMargin">
-            <number>2</number>
+            <number>6</number>
            </property>
            <property name="rightMargin">
-            <number>4</number>
+            <number>8</number>
            </property>
            <property name="bottomMargin">
-            <number>2</number>
+            <number>8</number>
            </property>
            <item>
             <widget class="QTreeView" name="treeView">
@@ -185,7 +267,7 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
            <item>
             <layout class="QHBoxLayout" name="horizontalLayout_treeButtons">
              <property name="spacing">
-              <number>3</number>
+              <number>6</number>
              </property>
              <item>
               <widget class="QPushButton" name="addItemButton">
@@ -218,25 +300,25 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
           <property name="title">
            <string>View Controls</string>
           </property>
-          <layout class="QGridLayout" name="gridLayout_view">
-           <property name="leftMargin">
-            <number>4</number>
-           </property>
-           <property name="topMargin">
-            <number>2</number>
-           </property>
-           <property name="rightMargin">
-            <number>4</number>
-           </property>
-           <property name="bottomMargin">
-            <number>2</number>
-           </property>
-           <property name="horizontalSpacing">
-            <number>4</number>
-           </property>
-           <property name="verticalSpacing">
-            <number>3</number>
-           </property>
+           <layout class="QGridLayout" name="gridLayout_view">
+            <property name="leftMargin">
+             <number>8</number>
+            </property>
+            <property name="topMargin">
+             <number>6</number>
+            </property>
+            <property name="rightMargin">
+             <number>8</number>
+            </property>
+            <property name="bottomMargin">
+             <number>8</number>
+            </property>
+            <property name="horizontalSpacing">
+             <number>8</number>
+            </property>
+            <property name="verticalSpacing">
+             <number>6</number>
+            </property>
            <item row="0" column="0">
             <widget class="QPushButton" name="resetViewButton">
              <property name="text">
@@ -426,92 +508,6 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
              </property>
             </widget>
            </item>
-           <item row="4" column="0">
-            <widget class="QLabel" name="explodeLabel">
-             <property name="text">
-              <string>Explode:</string>
-             </property>
-             <property name="toolTip">
-              <string>One-click animated exploded view. Pick a direction, then click the button to fly the parts apart (or back together) over ~1 second.</string>
-             </property>
-            </widget>
-           </item>
-           <item row="4" column="1">
-            <widget class="QComboBox" name="explodeModeBox">
-             <property name="toolTip">
-              <string>Direction for the exploded view. Spherical = each part flies radially from the model centre. X / Y / Z = parts spread along just that axis.</string>
-             </property>
-             <item>
-              <property name="text">
-               <string>Spherical</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>X-axis</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>Y-axis</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>Z-axis</string>
-              </property>
-             </item>
-            </widget>
-           </item>
-           <item row="4" column="2">
-            <widget class="QPushButton" name="explodeButton">
-             <property name="text">
-              <string>Explode</string>
-             </property>
-             <property name="checkable">
-              <bool>true</bool>
-             </property>
-             <property name="toolTip">
-              <string>Animate parts apart (or back together). VR auto-syncs at the end of the animation.</string>
-             </property>
-            </widget>
-           </item>
-           <item row="5" column="0">
-            <widget class="QLabel" name="opacityLabel">
-             <property name="text">
-              <string>X-ray Opacity:</string>
-             </property>
-             <property name="toolTip">
-              <string>Drag to make every visible part semi-transparent. 100 = solid, 0 = invisible. Lets you see through the outer shell to spot internal geometry.</string>
-             </property>
-            </widget>
-           </item>
-           <item row="5" column="1">
-            <widget class="QSlider" name="opacitySlider">
-             <property name="maximum">
-              <number>100</number>
-             </property>
-             <property name="value">
-              <number>100</number>
-             </property>
-             <property name="orientation">
-              <enum>Qt::Horizontal</enum>
-             </property>
-             <property name="toolTip">
-              <string>Global opacity for every visible part. VR auto-syncs on slider release.</string>
-             </property>
-            </widget>
-           </item>
-           <item row="5" column="2">
-            <widget class="QPushButton" name="opacitySolidButton">
-             <property name="text">
-              <string>Solid</string>
-             </property>
-             <property name="toolTip">
-              <string>Snap opacity back to 100% (turn X-ray off in one click).</string>
-             </property>
-            </widget>
-           </item>
           </layout>
          </widget>
         </item>
@@ -520,21 +516,21 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
           <property name="title">
            <string>Virtual Reality</string>
           </property>
-          <layout class="QHBoxLayout" name="horizontalLayout_vr">
+           <layout class="QHBoxLayout" name="horizontalLayout_vr">
            <property name="spacing">
-            <number>4</number>
+            <number>6</number>
            </property>
            <property name="leftMargin">
-            <number>4</number>
+            <number>8</number>
            </property>
            <property name="topMargin">
-            <number>2</number>
+            <number>6</number>
            </property>
            <property name="rightMargin">
-            <number>4</number>
+            <number>8</number>
            </property>
            <property name="bottomMargin">
-            <number>2</number>
+            <number>8</number>
            </property>
            <item>
             <widget class="QPushButton" name="startVRButton">
@@ -542,8 +538,8 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
               <string>Start VR</string>
              </property>
              <property name="icon">
-              <iconset>
-               <normaloff>:/Icons/icons/startVR.png</normaloff>:/Icons/icons/startVR.png</iconset>
+              <iconset resource="icons.qrc">
+               <normaloff>:/Icons/icons/play.png</normaloff>:/Icons/icons/play.png</iconset>
              </property>
             </widget>
            </item>
@@ -553,8 +549,8 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
               <string>Stop VR</string>
              </property>
              <property name="icon">
-              <iconset>
-               <normaloff>:/Icons/icons/stopVR.png</normaloff>:/Icons/icons/stopVR.png</iconset>
+              <iconset resource="icons.qrc">
+               <normaloff>:/Icons/icons/stop.png</normaloff>:/Icons/icons/stop.png</iconset>
              </property>
             </widget>
            </item>
