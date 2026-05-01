@@ -2324,13 +2324,17 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event) {
     if (event->type() == QEvent::MouseButtonPress) {
       QMouseEvent *me = static_cast<QMouseEvent *>(event);
       if (me->button() == Qt::LeftButton) {
-        /* Shift+Left = "move this part". We pick the part under the
-         * cursor and consume the event so VTK's trackball doesn't
-         * also rotate the camera during the drag. If the pick misses,
-         * fall through to the normal click/drag tracking. */
-        if (me->modifiers() & Qt::ShiftModifier) {
-          if (startPartDrag(me->pos()))
-            return true;
+        /* Plain LMB on the currently-selected part = "move this part"
+         * (auto-discoverable: select via tree row OR by clicking the
+         * part once, then press-and-drag to translate). If the cursor
+         * is over an unselected part - or over empty space - fall
+         * through to the camera trackball + click-to-pick logic.
+         *
+         * Shift+LMB is a one-step "grab anything under the cursor
+         * without pre-selecting" shortcut. */
+        const bool shiftHeld = me->modifiers() & Qt::ShiftModifier;
+        if (startPartDrag(me->pos(), /*requireSelected=*/!shiftHeld)) {
+          return true;
         }
         /* Don't consume the press - VTK's interactor still needs it
          * to start a rotate/pan if the user goes on to drag. We just
@@ -2357,7 +2361,7 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event) {
           m_dragPart = nullptr;
           scheduleVRSync();
           emit statusUpdateMessage(
-              tr("Moved: %1 (Shift+drag again to move further)").arg(name), 0);
+              tr("Moved: %1 (drag the same part again to move further)").arg(name), 0);
           return true;
         }
         if (m_pressTracked) {
@@ -2375,7 +2379,7 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event) {
   return QMainWindow::eventFilter(watched, event);
 }
 
-bool MainWindow::startPartDrag(const QPoint &pos) {
+bool MainWindow::startPartDrag(const QPoint &pos, bool requireSelected) {
   /* Same coord transform as pickPartAt: VTK uses bottom-left + physical
    * pixels, Qt gives top-left + logical pixels. */
   const double dpr = ui->vtkWidget->devicePixelRatioF();
@@ -2396,6 +2400,15 @@ bool MainWindow::startPartDrag(const QPoint &pos) {
   ModelPart *part = static_cast<ModelPart *>(idx.internalPointer());
   if (!part || !part->getActor())
     return false;
+
+  /* Plain-LMB drag is gated to the already-selected part so a stray
+   * left-click on an unselected part (or one that overlaps the camera
+   * the user wants to rotate) doesn't accidentally pick it up. */
+  if (requireSelected) {
+    QModelIndex curr = ui->treeView->currentIndex();
+    if (curr != idx)
+      return false;
+  }
 
   /* Mirror pickPartAt: select the picked part so the right panel and
    * the rest of the toolbox track what the user is dragging. */
@@ -2422,7 +2435,7 @@ bool MainWindow::startPartDrag(const QPoint &pos) {
   m_dragDepth = display[2];
 
   emit statusUpdateMessage(
-      tr("Dragging %1 - release Shift+Left to drop").arg(part->data(0).toString()),
+      tr("Dragging %1 - release the mouse to drop").arg(part->data(0).toString()),
       0);
   return true;
 }

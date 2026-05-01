@@ -308,14 +308,24 @@ private:
   QPoint m_pressPos;
   bool m_pressTracked = false;
 
-  /* Shift+LeftDrag in the 3D view translates the picked part along the
+  /* Plain-LMB drag (on the already-selected part) or Shift+LMB drag
+   * (anything under the cursor) translates the picked part along the
    * screen plane. State for the drag lives on MainWindow because the
    * eventFilter / start / update / end calls are split across mouse
    * press / move / release events. The translation is stored as the
    * part's explode offset so it propagates into VR via getNewActor()
    * (and so a subsequent explode animation will reset the manual
-   * placement, which matches user expectation - explode wins). */
-  bool startPartDrag(const QPoint &pos);
+   * placement, which matches user expectation - explode wins).
+   *
+   * startPartDrag returns true and arms the drag state if there's a
+   * draggable part under the cursor. requireSelected=true (the default
+   * for plain LMB) only allows starting a drag when the cursor sits
+   * on the currently-selected tree row, so a left-click on an
+   * unselected part still falls through to the normal "click-to-select
+   * / drag-to-rotate-camera" path. Shift+LMB passes requireSelected
+   * =false to override (immediate drag of anything under the cursor,
+   * useful when you don't want to walk over to the tree first). */
+  bool startPartDrag(const QPoint &pos, bool requireSelected = true);
   void updatePartDrag(const QPoint &pos);
   bool m_partDragging = false;
   ModelPart *m_dragPart = nullptr;
