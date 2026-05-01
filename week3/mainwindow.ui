@@ -569,19 +569,6 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
             </widget>
            </item>
            <item>
-            <widget class="QPushButton" name="vrRotateButton">
-             <property name="toolTip">
-              <string>Spin the model around Y axis inside VR. Same as pressing R.</string>
-             </property>
-             <property name="text">
-              <string>Rotate (R)</string>
-             </property>
-             <property name="checkable">
-              <bool>true</bool>
-             </property>
-            </widget>
-           </item>
-           <item>
             <spacer name="horizontalSpacer_vr">
              <property name="orientation">
               <enum>Qt::Orientation::Horizontal</enum>
@@ -770,6 +757,14 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
    </property>
    <property name="toolTip">
     <string>Print the current view</string>
+   </property>
+  </action>
+  <action name="actionScreenshot">
+   <property name="text">
+    <string>Screenshot</string>
+   </property>
+   <property name="toolTip">
+    <string>Save the current viewport as a PNG</string>
    </property>
   </action>
   <action name="actionExit">
