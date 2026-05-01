@@ -33,6 +33,7 @@
 #include <QProgressDialog>
 #include <QPushButton>
 #include <QSet>
+#include <QSignalBlocker>
 #include <QStyle>
 #include <QTreeView>
 #include <QVBoxLayout>
@@ -88,7 +89,7 @@ MainWindow::MainWindow(QWidget *parent)
   setWindowIcon(QIcon(":/Icons/icons/startVR.png"));
   refreshWindowTitle();
 
-  ui->actionOpen_Folder->setIcon(style()->standardIcon(QStyle::SP_DirOpenIcon));
+  ui->actionOpen_Folder->setIcon(QIcon(":/Icons/icons/openfolder.png"));
 
   /* Tree-side buttons */
   connect(ui->addItemButton, &QPushButton::released, this,
@@ -535,7 +536,33 @@ void MainWindow::openItemOptions() {
   selectedPart->setClipFilter(dialog.getClipFilter());
   selectedPart->setShrinkFilter(dialog.getShrinkFilter());
 
-  if (selectedPart->getActor()) {
+  /* Folder rows have no STL/actor, so the dialog's colour, visibility
+   * and clip/shrink toggles only matter if we cascade them through
+   * every descendant. For leaves these helpers no-op past the leaf
+   * itself, so calling them unconditionally keeps the leaf path
+   * working AND makes "edit a folder" actually do something visible. */
+  const bool isFolder = selectedPart->getStlPath().isEmpty();
+  if (isFolder) {
+    applyColourToTree(index, dialog.getR(), dialog.getG(), dialog.getB());
+    setVisibilityRecursive(index, dialog.getVisible());
+    /* Cascade clip/shrink toggles through every descendant. The
+     * dialog uses booleans (not slider values), so just walk the
+     * subtree and stamp the same on/off state on each leaf. */
+    std::function<void(const QModelIndex &)> applyFilters =
+        [&](const QModelIndex &idx) {
+          if (idx.isValid()) {
+            ModelPart *p = static_cast<ModelPart *>(idx.internalPointer());
+            if (p && !p->getStlPath().isEmpty()) {
+              p->setClipFilter(dialog.getClipFilter());
+              p->setShrinkFilter(dialog.getShrinkFilter());
+            }
+          }
+          int rows = partList->rowCount(idx);
+          for (int i = 0; i < rows; ++i)
+            applyFilters(partList->index(i, 0, idx));
+        };
+    applyFilters(index);
+  } else if (selectedPart->getActor()) {
     selectedPart->getActor()->GetProperty()->SetColor(
         dialog.getR() / 255.0, dialog.getG() / 255.0, dialog.getB() / 255.0);
     /* No SetVisibility call here - selectedPart->setVisible(...) above
@@ -1152,11 +1179,30 @@ void MainWindow::on_actionAbout_triggered() {
 }
 
 void MainWindow::onResetViewClicked() {
+  /* "Reset View" returns the scene to the layout the user saw on first
+   * load. That means: stop any running explode animation, clear every
+   * part's explode offset (which also wipes manual drag offsets, since
+   * drag stores into the same field), un-toggle the Explode button, and
+   * then re-frame the camera. applyExplosion(0.0, ...) writes 0/0/0
+   * into each visible part's offset via translatePartsForExplosion. */
+  if (explodeTimer && explodeTimer->isActive())
+    explodeTimer->stop();
+  m_explodeStart = 0.0;
+  m_explodeTarget = 0.0;
+  m_explodeProgress = 0.0;
+  applyExplosion(0.0, m_explodeMode);
+  if (ui->explodeButton) {
+    QSignalBlocker block(ui->explodeButton);
+    ui->explodeButton->setChecked(false);
+    ui->explodeButton->setText(tr("Explode"));
+  }
+
   renderer->ResetCamera();
   renderer->GetActiveCamera()->Azimuth(30);
   renderer->GetActiveCamera()->Elevation(30);
   renderer->ResetCameraClippingRange();
   renderWindow->Render();
+  scheduleVRSync();
   emit statusUpdateMessage(tr("View reset"), 0);
 }
 
@@ -1196,14 +1242,20 @@ void MainWindow::onChangeColourClicked() {
   if (!chosen.isValid())
     return;
 
+  int touched = 0;
   if (applyToAll) {
-    applyColourToTree(QModelIndex(), chosen.red(), chosen.green(),
-                      chosen.blue());
-    emit statusUpdateMessage(tr("Changed colour for ALL parts"), 0);
-  } else {
-    applyColourToTree(index, chosen.red(), chosen.green(), chosen.blue());
+    touched = applyColourToTree(QModelIndex(), chosen.red(), chosen.green(),
+                                chosen.blue());
     emit statusUpdateMessage(
-        tr("Changed colour for: ") + selectedPart->data(0).toString(), 0);
+        tr("Changed colour for ALL parts (%1 actor(s))").arg(touched), 0);
+  } else {
+    touched = applyColourToTree(index, chosen.red(), chosen.green(),
+                                chosen.blue());
+    emit statusUpdateMessage(
+        tr("Changed colour for %1 (%2 actor(s))")
+            .arg(selectedPart->data(0).toString())
+            .arg(touched),
+        0);
   }
   renderWindow->Render();
   /* Marksheet: "VR updates colour in real-time (no need to restart)". */
@@ -2234,20 +2286,24 @@ void MainWindow::applyOpacityToTree(const QModelIndex &index,
     applyOpacityToTree(partList->index(i, 0, index), opacity);
 }
 
-void MainWindow::applyColourToTree(const QModelIndex &index, unsigned char R,
-                                   unsigned char G, unsigned char B) {
+int MainWindow::applyColourToTree(const QModelIndex &index, unsigned char R,
+                                  unsigned char G, unsigned char B) {
+  int count = 0;
   if (index.isValid()) {
     ModelPart *part = static_cast<ModelPart *>(index.internalPointer());
     if (part && !part->getStlPath().isEmpty()) {
       part->setColour(R, G, B);
-      if (part->getActor())
+      if (part->getActor()) {
         part->getActor()->GetProperty()->SetColor(R / 255.0, G / 255.0,
                                                   B / 255.0);
+        ++count;
+      }
     }
   }
   int rows = partList->rowCount(index);
   for (int i = 0; i < rows; ++i)
-    applyColourToTree(partList->index(i, 0, index), R, G, B);
+    count += applyColourToTree(partList->index(i, 0, index), R, G, B);
+  return count;
 }
 
 void MainWindow::applyShrinkFactorToTree(const QModelIndex &index,

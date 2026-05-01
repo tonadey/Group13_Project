@@ -269,8 +269,10 @@ private:
    * part that has an STL loaded. Used when the right-panel "Apply to
    * all" check boxes are ticked, so a single slider drag or colour
    * pick affects the whole assembly instead of just the current row. */
-  void applyColourToTree(const QModelIndex &index, unsigned char R,
-                         unsigned char G, unsigned char B);
+  /* Returns the number of actors whose colour was actually updated, so
+   * the status bar can confirm a folder cascade hit every leaf. */
+  int applyColourToTree(const QModelIndex &index, unsigned char R,
+                        unsigned char G, unsigned char B);
   void applyShrinkFactorToTree(const QModelIndex &index, double factor);
   void applyClipSliderToTree(const QModelIndex &index, int sliderValue);
   void applyLightFactorToTree(const QModelIndex &index, double factor);
