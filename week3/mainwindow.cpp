@@ -536,7 +536,33 @@ void MainWindow::openItemOptions() {
   selectedPart->setClipFilter(dialog.getClipFilter());
   selectedPart->setShrinkFilter(dialog.getShrinkFilter());
 
-  if (selectedPart->getActor()) {
+  /* Folder rows have no STL/actor, so the dialog's colour, visibility
+   * and clip/shrink toggles only matter if we cascade them through
+   * every descendant. For leaves these helpers no-op past the leaf
+   * itself, so calling them unconditionally keeps the leaf path
+   * working AND makes "edit a folder" actually do something visible. */
+  const bool isFolder = selectedPart->getStlPath().isEmpty();
+  if (isFolder) {
+    applyColourToTree(index, dialog.getR(), dialog.getG(), dialog.getB());
+    setVisibilityRecursive(index, dialog.getVisible());
+    /* Cascade clip/shrink toggles through every descendant. The
+     * dialog uses booleans (not slider values), so just walk the
+     * subtree and stamp the same on/off state on each leaf. */
+    std::function<void(const QModelIndex &)> applyFilters =
+        [&](const QModelIndex &idx) {
+          if (idx.isValid()) {
+            ModelPart *p = static_cast<ModelPart *>(idx.internalPointer());
+            if (p && !p->getStlPath().isEmpty()) {
+              p->setClipFilter(dialog.getClipFilter());
+              p->setShrinkFilter(dialog.getShrinkFilter());
+            }
+          }
+          int rows = partList->rowCount(idx);
+          for (int i = 0; i < rows; ++i)
+            applyFilters(partList->index(i, 0, idx));
+        };
+    applyFilters(index);
+  } else if (selectedPart->getActor()) {
     selectedPart->getActor()->GetProperty()->SetColor(
         dialog.getR() / 255.0, dialog.getG() / 255.0, dialog.getB() / 255.0);
     /* No SetVisibility call here - selectedPart->setVisible(...) above
@@ -1216,14 +1242,20 @@ void MainWindow::onChangeColourClicked() {
   if (!chosen.isValid())
     return;
 
+  int touched = 0;
   if (applyToAll) {
-    applyColourToTree(QModelIndex(), chosen.red(), chosen.green(),
-                      chosen.blue());
-    emit statusUpdateMessage(tr("Changed colour for ALL parts"), 0);
-  } else {
-    applyColourToTree(index, chosen.red(), chosen.green(), chosen.blue());
+    touched = applyColourToTree(QModelIndex(), chosen.red(), chosen.green(),
+                                chosen.blue());
     emit statusUpdateMessage(
-        tr("Changed colour for: ") + selectedPart->data(0).toString(), 0);
+        tr("Changed colour for ALL parts (%1 actor(s))").arg(touched), 0);
+  } else {
+    touched = applyColourToTree(index, chosen.red(), chosen.green(),
+                                chosen.blue());
+    emit statusUpdateMessage(
+        tr("Changed colour for %1 (%2 actor(s))")
+            .arg(selectedPart->data(0).toString())
+            .arg(touched),
+        0);
   }
   renderWindow->Render();
   /* Marksheet: "VR updates colour in real-time (no need to restart)". */
@@ -2254,20 +2286,24 @@ void MainWindow::applyOpacityToTree(const QModelIndex &index,
     applyOpacityToTree(partList->index(i, 0, index), opacity);
 }
 
-void MainWindow::applyColourToTree(const QModelIndex &index, unsigned char R,
-                                   unsigned char G, unsigned char B) {
+int MainWindow::applyColourToTree(const QModelIndex &index, unsigned char R,
+                                  unsigned char G, unsigned char B) {
+  int count = 0;
   if (index.isValid()) {
     ModelPart *part = static_cast<ModelPart *>(index.internalPointer());
     if (part && !part->getStlPath().isEmpty()) {
       part->setColour(R, G, B);
-      if (part->getActor())
+      if (part->getActor()) {
         part->getActor()->GetProperty()->SetColor(R / 255.0, G / 255.0,
                                                   B / 255.0);
+        ++count;
+      }
     }
   }
   int rows = partList->rowCount(index);
   for (int i = 0; i < rows; ++i)
-    applyColourToTree(partList->index(i, 0, index), R, G, B);
+    count += applyColourToTree(partList->index(i, 0, index), R, G, B);
+  return count;
 }
 
 void MainWindow::applyShrinkFactorToTree(const QModelIndex &index,
