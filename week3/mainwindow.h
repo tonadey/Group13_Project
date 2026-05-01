@@ -107,6 +107,9 @@ public slots:
   void on_actionChange_Colour_triggered();
   void on_actionToggle_Visibility_triggered();
 
+  /** Toolbar/menu Screenshot entry; delegates to onScreenshotClicked(). */
+  void on_actionScreenshot_triggered();
+
   /**
    * @brief Captures the current VTK render window and saves it as a PNG.
    */

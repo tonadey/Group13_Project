@@ -202,10 +202,6 @@ public:
    *  Used by the GUI to warn before pushing a huge scene into VR. */
   vtkIdType getTriangleCount() const;
 
-  /** Triangle count of the loaded mesh, or 0 if nothing has been loaded.
-   *  Used by the GUI to warn before pushing a huge scene into VR. */
-  vtkIdType getTriangleCount() const;
-
   /**
    * @brief Gets the actor used by the desktop renderer.
    * @return Current actor, or nullptr if no STL has been loaded.
