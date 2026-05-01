@@ -1230,6 +1230,12 @@ void MainWindow::onShrinkSliderChanged(int value) {
    * Slider 100 -> factor 0.0 (max shrink). */
   double factor = (100.0 - value) / 100.0;
 
+  /* Cascade semantics:
+   *   - "Apply to all" ticked: walk from the root (every loaded part).
+   *   - Otherwise: walk the selected subtree. applyShrinkFactorToTree
+   *     touches the index AND every descendant, skipping non-STL rows -
+   *     so picking a folder shrinks every leaf underneath, picking a
+   *     leaf shrinks only that leaf. */
   const bool applyToAll = ui->applyAllShrinkCheckBox &&
                           ui->applyAllShrinkCheckBox->isChecked();
   if (applyToAll) {
@@ -1247,15 +1253,17 @@ void MainWindow::onShrinkSliderChanged(int value) {
         tr("Select an item before adjusting the shrink slider."), 0);
     return;
   }
-  ModelPart *selectedPart = static_cast<ModelPart *>(index.internalPointer());
-  if (!selectedPart)
-    return;
 
-  selectedPart->setShrinkFactor(factor);
+  applyShrinkFactorToTree(index, factor);
   renderWindow->Render();
   scheduleVRSync();
+  ModelPart *selectedPart = static_cast<ModelPart *>(index.internalPointer());
   emit statusUpdateMessage(
-      tr("Shrink factor: %1").arg(factor, 0, 'f', 2), 0);
+      tr("Shrink %1: %2")
+          .arg(selectedPart ? selectedPart->data(0).toString()
+                            : QStringLiteral("(subtree)"))
+          .arg(factor, 0, 'f', 2),
+      0);
 }
 
 void MainWindow::onClipSliderChanged(int value) {
