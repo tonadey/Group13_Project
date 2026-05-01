@@ -1112,10 +1112,14 @@ void MainWindow::onResetViewClicked() {
 }
 
 void MainWindow::onChangeColourClicked() {
-  /* "Apply to all" mode: skip the per-part guard and stamp the chosen
-   * colour onto every loaded part in the tree. The dialog seeds from
-   * the currently selected part if any (so the user has a sensible
-   * starting colour), otherwise from white. */
+  /* Cascade semantics:
+   *   - "Apply to all" checkbox ticked: walk the entire tree from the
+   *     root (shortcut for "stamp every loaded part" without having to
+   *     select the root row first).
+   *   - Otherwise: walk the selected subtree. applyColourToTree() touches
+   *     the index AND every descendant, skipping rows with no STL loaded.
+   *     So selecting a folder cascades the colour onto every leaf
+   *     underneath; selecting a leaf affects only that leaf. */
   const bool applyToAll = ui->applyAllColourCheckBox &&
                           ui->applyAllColourCheckBox->isChecked();
 
@@ -1130,7 +1134,9 @@ void MainWindow::onChangeColourClicked() {
     return;
   }
 
-  QColor initial = selectedPart
+  /* Seed the picker from the selected part if it has STL data; otherwise
+   * white (folder selections / Apply-to-all). */
+  QColor initial = (selectedPart && !selectedPart->getStlPath().isEmpty())
                        ? QColor(selectedPart->getColourR(),
                                 selectedPart->getColourG(),
                                 selectedPart->getColourB())
@@ -1146,11 +1152,7 @@ void MainWindow::onChangeColourClicked() {
                       chosen.blue());
     emit statusUpdateMessage(tr("Changed colour for ALL parts"), 0);
   } else {
-    selectedPart->setColour(chosen.red(), chosen.green(), chosen.blue());
-    if (selectedPart->getActor()) {
-      selectedPart->getActor()->GetProperty()->SetColor(
-          chosen.redF(), chosen.greenF(), chosen.blueF());
-    }
+    applyColourToTree(index, chosen.red(), chosen.green(), chosen.blue());
     emit statusUpdateMessage(
         tr("Changed colour for: ") + selectedPart->data(0).toString(), 0);
   }
