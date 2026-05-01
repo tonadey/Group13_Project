@@ -65,6 +65,7 @@ install_manifest.txt
 compile_commands.json
 CTestTestfile.cmake
 _deps
+CMakeSettings.json
  
 # gitignore for Qt Creator like IDE for pure C/C++ project without Qt
 #
@@ -500,6 +501,8 @@ build/
 # Ignore the build and .qt folders at the root
 /.qt/
 /build/
+*.slnx
+example-stl-main/*
 
 # Ignore the autogen folders inside subdirectories (like week3)
 *autogen/
