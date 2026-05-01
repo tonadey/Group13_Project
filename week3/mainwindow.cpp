@@ -89,13 +89,10 @@ MainWindow::MainWindow(QWidget *parent)
   setWindowIcon(QIcon(":/Icons/icons/startVR.png"));
   refreshWindowTitle();
 
-  ui->actionOpen_Folder->setIcon(QIcon(":/Icons/icons/openfolder.png"));
-<<<<<<< HEAD
-  ui->actionScreenshot->setIcon(QIcon(":/Icons/icons/screenshot.png"));
-=======
-ui->actionOpen_Folder->setIcon(QIcon(":/Icons/icons/openfolder.png"));
 
->>>>>>> a4ac6b427cf88daa8061caeb5df9f3db24e40d3d
+  ui->actionScreenshot->setIcon(QIcon(":/Icons/icons/screenshot.png"));
+  ui->actionOpen_Folder->setIcon(QIcon(":/Icons/icons/openfolder.png"));
+
 
   /* Tree-side buttons */
   connect(ui->addItemButton, &QPushButton::released, this,
