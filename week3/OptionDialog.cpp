@@ -63,31 +63,8 @@ void OptionDialog::setItemVisible(bool visible) {
   ui->visibleCheckBox->setChecked(visible);
 }
 
-/** @return true when the clip filter checkbox is checked. */
-bool OptionDialog::getClipFilter() const {
-  return ui->clipCheckBox->isChecked();
-}
 
-/**
- * @brief Updates the clip filter checkbox.
- * @param enabled true to enable clipping.
- */
-void OptionDialog::setClipFilter(bool enabled) {
-  ui->clipCheckBox->setChecked(enabled);
-}
 
-/** @return true when the shrink filter checkbox is checked. */
-bool OptionDialog::getShrinkFilter() const {
-  return ui->shrinkCheckBox->isChecked();
-}
-
-/**
- * @brief Updates the shrink filter checkbox.
- * @param enabled true to enable shrinking.
- */
-void OptionDialog::setShrinkFilter(bool enabled) {
-  ui->shrinkCheckBox->setChecked(enabled);
-}
 
 /** @return STL path entered in the dialog. */
 QString OptionDialog::getStlPath() const { return ui->stlLineEdit->text(); }

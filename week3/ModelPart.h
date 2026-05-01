@@ -148,17 +148,8 @@ public:
    * @param enabled true to enable clipping.
    */
   void setClipFilter(bool enabled);
-
-  /** @return true when the clip filter is enabled. */
   bool getClipFilter() const { return m_clipFilter; }
-
-  /**
-   * @brief Enables or disables the shrink filter.
-   * @param enabled true to enable shrinking.
-   */
   void setShrinkFilter(bool enabled);
-
-  /** @return true when the shrink filter is enabled. */
   bool getShrinkFilter() const { return m_shrinkFilter; }
 
   /** Continuous-slider filter controls (merged from main branch).
@@ -166,17 +157,8 @@ public:
    *  as the vtkShrinkFilter factor; applyClipping enables clipping and
    *  positions the clip plane at world-space x. */
   void setShrinkFactor(double factor);
-
-  /**
-   * @brief Moves the clipping plane to the given X coordinate.
-   * @param actualX World-space X coordinate for the clip plane.
-   */
   void applyClipping(double actualX);
-
-  /** @return Current shrink factor. */
   double getShrinkFactor() const { return m_shrinkFactor; }
-
-  /** @return Current clip plane X coordinate. */
   double getClipX() const { return m_clipX; }
 
   /** Bounds captured the moment the STL is loaded, before any clip /
@@ -191,11 +173,6 @@ public:
    *  can apply the same translation that the GUI actor already has,
    *  keeping the explosion view in sync between desktop and headset. */
   void setExplodeOffset(double dx, double dy, double dz);
-
-  /**
-   * @brief Copies the current explode/manual translation offset.
-   * @param offset Output array receiving x, y, and z offsets.
-   */
   void getExplodeOffset(double offset[3]) const;
 
   /** X-ray / per-part opacity in [0..1]. 1.0 = fully opaque (default),
@@ -203,9 +180,14 @@ public:
    *  fresh actor (loadSTL or getNewActor for VR) inherits it instead
    *  of resetting to opaque every time the user reloads / re-syncs. */
   void setOpacity(double opacity);
-
-  /** @return Opacity in the range 0.0 to 1.0. */
   double getOpacity() const { return m_opacity; }
+
+  /** Per-part light intensity factor. Modulates this part's ambient and
+   *  diffuse lighting coefficients so the user can highlight or dim a
+   *  single part without touching the scene-level light. 1.0 = default,
+   *  0.0 = pitch dark, 2.0 = saturated bright. */
+  void setLightFactor(double factor);
+  double getLightFactor() const { return m_lightFactor; }
 
   /** Rebuild the mapper input chain (reader -> [filters] -> mapper)
    *  according to the current filter flags. */
@@ -260,6 +242,9 @@ private:
   /* X-ray opacity in [0..1]. Driven by the Opacity slider in
    * MainWindow's right-hand panel. 1.0 = solid (default). */
   double m_opacity = 1.0;
+
+  /* Per-part light factor; 1.0 = default lighting. */
+  double m_lightFactor = 1.0;
 
   vtkSmartPointer<vtkSTLReader> reader;
   vtkSmartPointer<vtkPolyDataMapper> mapper;

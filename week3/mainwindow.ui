@@ -15,201 +15,119 @@
   </property>
   <property name="styleSheet">
    <string notr="true">QMainWindow {
-    background: #eef2f6;
-}
-QWidget#centralwidget {
-    background: #eef2f6;
-}
-QWidget#leftPanel {
-    background: #eef2f6;
+    background: #f4f5f7;
 }
 QGroupBox {
     font-weight: 600;
-    color: #1f2a37;
-    border: 1px solid #d8dee8;
+    color: #2a3142;
+    border: 1px solid #c5cad3;
     border-radius: 6px;
     margin-top: 9px;
     padding: 8px 6px 5px 6px;
-    background: #ffffff;
+    background: #fafbfc;
 }
 QGroupBox::title {
     subcontrol-origin: margin;
     subcontrol-position: top left;
     left: 8px;
     padding: 0 5px;
-    color: #2563a8;
-    background: #ffffff;
+    color: #1f5fb4;
 }
 QPushButton {
     padding: 4px 12px;
     min-height: 22px;
-    border: 1px solid #c6d0dc;
+    border: 1px solid #b8bdc7;
     border-radius: 4px;
-    background: #f8fafc;
-    color: #182230;
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                stop:0 #ffffff, stop:1 #e8ecf2);
+    color: #1f2530;
 }
 QPushButton:hover {
-    border-color: #3784d8;
-    background: #edf6ff;
+    border-color: #4a90d9;
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                stop:0 #ffffff, stop:1 #d6e4f5);
 }
 QPushButton:pressed {
-    background: #d9ecff;
-    border-color: #2563a8;
-}
-QPushButton:checked {
-    background: #2563a8;
-    border-color: #1d4f86;
-    color: #ffffff;
+    background: #c2d4ec;
 }
 QPushButton:disabled {
-    color: #98a2b3;
-    background: #edf0f3;
-    border-color: #d7dde5;
+    color: #a0a4ad;
+    background: #ededed;
 }
-QCheckBox {
-    spacing: 5px;
-    color: #1f2a37;
-}
-QLabel {
-    padding: 0;
-    color: #344054;
-}
+QCheckBox { spacing: 5px; }
+QLabel { padding: 0; color: #2a3142; }
 QTreeView {
-    border: 1px solid #d8dee8;
+    border: 1px solid #c5cad3;
     border-radius: 4px;
     background: #ffffff;
-    alternate-background-color: #f6f8fb;
-    selection-background-color: #2563a8;
+    alternate-background-color: #f5f7fa;
+    selection-background-color: #4a90d9;
     selection-color: #ffffff;
-    outline: 0;
 }
-QTreeView::item {
-    padding: 2px 0;
-}
-QHeaderView::section {
-    background: #f5f7fa;
-    color: #344054;
-    border: none;
-    border-bottom: 1px solid #d8dee8;
-    padding: 4px;
-}
-QLineEdit, QDoubleSpinBox, QSpinBox, QComboBox {
+QTreeView::item { padding: 2px 0; }
+QDoubleSpinBox, QSpinBox {
     padding: 1px 2px;
-    border: 1px solid #c6d0dc;
+    min-height: 18px;
+    border: 1px solid #b8bdc7;
     border-radius: 3px;
-    background: #ffffff;
-    color: #182230;
-}
-QLineEdit:focus, QDoubleSpinBox:focus, QSpinBox:focus, QComboBox:focus {
-    border-color: #3784d8;
 }
 QSlider::groove:horizontal {
     height: 5px;
-    background: #d7dde7;
+    background: #d0d4dc;
     border-radius: 2px;
 }
 QSlider::sub-page:horizontal {
-    background: #3784d8;
+    background: #4a90d9;
     border-radius: 2px;
 }
 QSlider::handle:horizontal {
     width: 13px;
     margin: -5px 0;
-    background: #ffffff;
+    background: qradialgradient(cx:0.5, cy:0.5, radius:0.5,
+                                fx:0.5, fy:0.4,
+                                stop:0 #6aa9e0, stop:1 #2a70b9);
     border-radius: 6px;
-    border: 1px solid #3784d8;
+    border: 1px solid #1f5fb4;
 }
 QSlider::handle:horizontal:hover {
-    background: #edf6ff;
-    border-color: #2563a8;
+    background: qradialgradient(cx:0.5, cy:0.5, radius:0.5,
+                                fx:0.5, fy:0.4,
+                                stop:0 #87bce7, stop:1 #3a80c9);
 }
 QStatusBar {
-    background: #1f2a37;
-    color: #e7edf4;
-    border-top: 1px solid #111827;
-}
-QStatusBar::item {
-    border: none;
+    background: #2a3142;
+    color: #e8ecf2;
 }
 QToolBar {
-    border-bottom: 1px solid #d8dee8;
-    background: #ffffff;
+    border-bottom: 1px solid #c5cad3;
+    background: #fafbfc;
     spacing: 2px;
     padding: 2px;
 }
-QToolButton {
-    border: 1px solid transparent;
-    border-radius: 4px;
-    padding: 2px;
-    background: transparent;
-}
-QToolButton:hover {
-    border-color: #c6d0dc;
-    background: #f3f8fd;
-}
-QToolButton:checked {
-    border-color: #2563a8;
-    background: #d9ecff;
-}
 QMenuBar {
-    background: #ffffff;
-    color: #1f2a37;
-    border-bottom: 1px solid #d8dee8;
+    background: #fafbfc;
+    border-bottom: 1px solid #c5cad3;
 }
-QMenuBar::item {
-    padding: 4px 10px;
-    background: transparent;
-}
-QMenuBar::item:selected {
-    background: #edf6ff;
-    color: #1d4f86;
-}
-QMenu {
-    background: #ffffff;
-    color: #1f2a37;
-    border: 1px solid #d8dee8;
-}
-QMenu::item {
-    padding: 4px 20px;
-}
-QMenu::item:selected {
-    background: #2563a8;
-    color: #ffffff;
-}
-QMenu::separator {
-    height: 1px;
-    background: #e4e9f0;
-    margin: 4px 8px;
-}
-QSplitter::handle {
-    background: #d8dee8;
-}
-QSplitter::handle:hover {
-    background: #b8c5d4;
-}
-QToolTip {
-    background: #1f2a37;
-    color: #ffffff;
-    border: 1px solid #344054;
-    padding: 4px;
-}</string>
+QMenuBar::item:selected { background: #d6e4f5; }
+QMenu { background: #ffffff; border: 1px solid #c5cad3; }
+QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QHBoxLayout" name="horizontalLayout_main">
     <property name="spacing">
-     <number>8</number>
+     <number>4</number>
     </property>
     <property name="leftMargin">
-     <number>8</number>
+     <number>4</number>
     </property>
     <property name="topMargin">
-     <number>8</number>
+     <number>4</number>
     </property>
     <property name="rightMargin">
-     <number>8</number>
+     <number>4</number>
     </property>
     <property name="bottomMargin">
-     <number>8</number>
+     <number>4</number>
     </property>
     <item>
      <widget class="QSplitter" name="mainSplitter">
@@ -222,7 +140,7 @@ QToolTip {
       <widget class="QWidget" name="leftPanel" native="true">
        <layout class="QVBoxLayout" name="verticalLayout_left">
         <property name="spacing">
-         <number>8</number>
+         <number>4</number>
         </property>
         <property name="leftMargin">
          <number>0</number>
@@ -243,19 +161,19 @@ QToolTip {
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_tree">
            <property name="spacing">
-           <number>6</number>
+            <number>3</number>
            </property>
            <property name="leftMargin">
-            <number>8</number>
+            <number>4</number>
            </property>
            <property name="topMargin">
-            <number>6</number>
+            <number>2</number>
            </property>
            <property name="rightMargin">
-            <number>8</number>
+            <number>4</number>
            </property>
            <property name="bottomMargin">
-            <number>8</number>
+            <number>2</number>
            </property>
            <item>
             <widget class="QTreeView" name="treeView">
@@ -267,7 +185,7 @@ QToolTip {
            <item>
             <layout class="QHBoxLayout" name="horizontalLayout_treeButtons">
              <property name="spacing">
-              <number>6</number>
+              <number>3</number>
              </property>
              <item>
               <widget class="QPushButton" name="addItemButton">
@@ -300,25 +218,25 @@ QToolTip {
           <property name="title">
            <string>View Controls</string>
           </property>
-           <layout class="QGridLayout" name="gridLayout_view">
-            <property name="leftMargin">
-             <number>8</number>
-            </property>
-            <property name="topMargin">
-             <number>6</number>
-            </property>
-            <property name="rightMargin">
-             <number>8</number>
-            </property>
-            <property name="bottomMargin">
-             <number>8</number>
-            </property>
-            <property name="horizontalSpacing">
-             <number>8</number>
-            </property>
-            <property name="verticalSpacing">
-             <number>6</number>
-            </property>
+          <layout class="QGridLayout" name="gridLayout_view">
+           <property name="leftMargin">
+            <number>4</number>
+           </property>
+           <property name="topMargin">
+            <number>2</number>
+           </property>
+           <property name="rightMargin">
+            <number>4</number>
+           </property>
+           <property name="bottomMargin">
+            <number>2</number>
+           </property>
+           <property name="horizontalSpacing">
+            <number>4</number>
+           </property>
+           <property name="verticalSpacing">
+            <number>3</number>
+           </property>
            <item row="0" column="0">
             <widget class="QPushButton" name="resetViewButton">
              <property name="text">
@@ -508,6 +426,73 @@ QToolTip {
              </property>
             </widget>
            </item>
+           <item row="6" column="0" colspan="3">
+            <layout class="QHBoxLayout" name="applyToAllRow">
+             <item>
+              <widget class="QLabel" name="applyToAllLabel">
+               <property name="toolTip">
+                <string>Tick a box to make the matching control act on every loaded part instead of just the selected one.</string>
+               </property>
+               <property name="text">
+                <string>Apply to all:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QCheckBox" name="applyAllColourCheckBox">
+               <property name="toolTip">
+                <string>When checked, Change Model Colour stamps the chosen colour onto every loaded part.</string>
+               </property>
+               <property name="text">
+                <string>Colour</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QCheckBox" name="applyAllShrinkCheckBox">
+               <property name="toolTip">
+                <string>When checked, the Shrink slider applies the same factor to every loaded part.</string>
+               </property>
+               <property name="text">
+                <string>Shrink</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QCheckBox" name="applyAllClipCheckBox">
+               <property name="toolTip">
+                <string>When checked, the Clip slider clips every loaded part using each part's own X bounds.</string>
+               </property>
+               <property name="text">
+                <string>Clip</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="applyToAllSpacer">
+               <property name="orientation">
+                <enum>Qt::Orientation::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>20</width>
+                 <height>10</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item>
+              <widget class="QCheckBox" name="perPartLightCheckBox">
+               <property name="toolTip">
+                <string>When checked, the Light Intensity slider modulates only the selected part's brightness instead of the scene light.</string>
+               </property>
+               <property name="text">
+                <string>Per-Part Light</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
           </layout>
          </widget>
         </item>
@@ -516,21 +501,21 @@ QToolTip {
           <property name="title">
            <string>Virtual Reality</string>
           </property>
-           <layout class="QHBoxLayout" name="horizontalLayout_vr">
+          <layout class="QHBoxLayout" name="horizontalLayout_vr">
            <property name="spacing">
-            <number>6</number>
+            <number>4</number>
            </property>
            <property name="leftMargin">
-            <number>8</number>
+            <number>4</number>
            </property>
            <property name="topMargin">
-            <number>6</number>
+            <number>2</number>
            </property>
            <property name="rightMargin">
-            <number>8</number>
+            <number>4</number>
            </property>
            <property name="bottomMargin">
-            <number>8</number>
+            <number>2</number>
            </property>
            <item>
             <widget class="QPushButton" name="startVRButton">
@@ -567,10 +552,10 @@ QToolTip {
            <item>
             <widget class="QPushButton" name="vrRotateButton">
              <property name="toolTip">
-              <string>Spin the model around Y axis inside VR. Same as pressing R.</string>
+              <string>Spin the model around Y axis inside VR. Same as pressing R. Text flips to &quot;Stop Rotation&quot; while spinning.</string>
              </property>
              <property name="text">
-              <string>Rotate (R)</string>
+              <string>Start Rotation (R)</string>
              </property>
              <property name="checkable">
               <bool>true</bool>
@@ -597,6 +582,9 @@ QToolTip {
       </widget>
       <widget class="QWidget" name="rightPanel" native="true">
        <layout class="QVBoxLayout" name="verticalLayout_right">
+        <property name="spacing">
+         <number>0</number>
+        </property>
         <property name="leftMargin">
          <number>0</number>
         </property>
@@ -607,9 +595,6 @@ QToolTip {
          <number>0</number>
         </property>
         <property name="bottomMargin">
-         <number>0</number>
-        </property>
-        <property name="spacing">
          <number>0</number>
         </property>
         <item>
@@ -664,7 +649,6 @@ QToolTip {
     <addaction name="separator"/>
     <addaction name="actionItem_Options"/>
     <addaction name="actionChange_Colour"/>
-    <addaction name="actionChange_Background"/>
     <addaction name="actionToggle_Visibility"/>
    </widget>
    <widget class="QMenu" name="menuView">
@@ -767,6 +751,18 @@ QToolTip {
    </property>
    <property name="toolTip">
     <string>Print the current view</string>
+   </property>
+  </action>
+  <action name="actionScreenshot">
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/Icons/icons/screenshot.png</normaloff>:/Icons/icons/screenshot.png</iconset>
+   </property>
+   <property name="text">
+    <string>Screenshot</string>
+   </property>
+   <property name="toolTip">
+    <string>Save the current viewport as a PNG</string>
    </property>
   </action>
   <action name="actionExit">
@@ -897,17 +893,13 @@ QToolTip {
      <normaloff>:/Icons/icons/modelcolor.png</normaloff>:/Icons/icons/modelcolor.png</iconset>
    </property>
    <property name="text">
-    <string>Change Model Colour</string>
+    <string>Change Colour...</string>
    </property>
    <property name="toolTip">
     <string>Pick a colour for the selected part (works in VR via auto-sync)</string>
    </property>
   </action>
   <action name="actionToggle_Visibility">
-   <property name="icon">
-    <iconset resource="icons.qrc">
-     <normaloff>:/Icons/icons/visibility.png</normaloff>:/Icons/icons/visibility.png</iconset>
-   </property>
    <property name="text">
     <string>Toggle Visibility</string>
    </property>
@@ -919,10 +911,6 @@ QToolTip {
    <property name="checkable">
     <bool>true</bool>
    </property>
-   <property name="icon">
-    <iconset resource="icons.qrc">
-     <normaloff>:/Icons/icons/rotatecamera.png</normaloff>:/Icons/icons/rotatecamera.png</iconset>
-   </property>
    <property name="text">
     <string>Toggle VR Rotation (R)</string>
    </property>
@@ -931,27 +919,11 @@ QToolTip {
    </property>
   </action>
   <action name="actionSync_VR">
-   <property name="icon">
-    <iconset resource="icons.qrc">
-     <normaloff>:/Icons/icons/sync.png</normaloff>:/Icons/icons/sync.png</iconset>
-   </property>
    <property name="text">
     <string>Sync to VR</string>
    </property>
    <property name="toolTip">
     <string>Push the current GUI scene (filters, colours, visibility) into the running VR session</string>
-   </property>
-  </action>
-  <action name="actionScreenshot">
-   <property name="icon">
-    <iconset resource="icons.qrc">
-     <normaloff>:/Icons/icons/screenshot.png</normaloff>:/Icons/icons/screenshot.png</iconset>
-   </property>
-   <property name="text">
-    <string>Take Screenshot</string>
-   </property>
-   <property name="menuRole">
-    <enum>QAction::MenuRole::NoRole</enum>
    </property>
   </action>
  </widget>

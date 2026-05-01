@@ -95,29 +95,7 @@ public:
    */
   void setItemVisible(bool visible);
 
-  /**
-   * @brief Gets whether clipping is enabled for the part.
-   * @return true when the clip filter is enabled.
-   */
-  bool getClipFilter() const;
-
-  /**
-   * @brief Sets whether clipping is enabled for the part.
-   * @param enabled true to enable clipping.
-   */
-  void setClipFilter(bool enabled);
-
-  /**
-   * @brief Gets whether shrinking is enabled for the part.
-   * @return true when the shrink filter is enabled.
-   */
-  bool getShrinkFilter() const;
-
-  /**
-   * @brief Sets whether shrinking is enabled for the part.
-   * @param enabled true to enable shrinking.
-   */
-  void setShrinkFilter(bool enabled);
+ 
 
   /**
    * @brief Gets the STL file path shown in the dialog.
