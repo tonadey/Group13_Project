@@ -1,3 +1,12 @@
+/**
+ * @file mainwindow.h
+ * @brief Main window controller for the Group 13 VR CAD Viewer.
+ *
+ * This class manages the main user interface, including loading STL files,
+ * displaying model parts in the tree view, applying visual filters, handling
+ * screenshots, and syncing the desktop scene with the VR render thread.
+ */
+
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
@@ -22,11 +31,28 @@ class MainWindow;
 }
 QT_END_NAMESPACE
 
+/**
+ * @class MainWindow
+ * @brief Main application window for the CAD and VR viewer.
+ *
+ * MainWindow connects the Qt interface to the VTK rendering scene. It handles
+ * file loading, part selection, colour and visibility changes, clip/shrink
+ * filters, exploded view controls, opacity controls, screenshots, and VR
+ * start/stop/sync actions.
+ */
 class MainWindow : public QMainWindow {
   Q_OBJECT
 
 public:
+  /**
+   * @brief Constructs the main window and initialises the UI.
+   * @param parent Parent widget.
+   */
   MainWindow(QWidget *parent = nullptr);
+
+  /**
+   * @brief Cleans up UI and stops any running VR thread.
+   */
   ~MainWindow();
 
 protected:
@@ -43,45 +69,88 @@ protected:
   bool eventFilter(QObject *watched, QEvent *event) override;
 
 signals:
+
+  /**
+   * @brief Updates the status bar with a message.
+   * @param message Text to display.
+   * @param timeout Duration in milliseconds.
+   */
   void statusUpdateMessage(const QString &message, int timeout);
 
 public slots:
+  /**
+   * @brief Handles selection changes in the part tree.
+   *
+   * Updates UI controls to reflect the selected model.
+   */
   void handleTreeClicked();
+
+  /**
+   * @brief Opens the item options dialog for the selected part.
+   */
   void openItemOptions();
 
-  /* File menu / toolbar */
+  /** @name File menu / toolbar actions */
+  ///@{
   void on_actionOpen_File_triggered();
   void on_actionOpen_Folder_triggered();
   void on_actionSave_triggered();
   void on_actionPrint_triggered();
   void on_actionExit_triggered();
+  ///@}
 
-  /* Edit menu / toolbar */
+  /** @name Edit menu / toolbar */
+  ///@{
   void on_actionItem_Options_triggered();
   void on_actionAdd_Item_triggered();
   void on_actionRemove_Item_triggered();
   void on_actionChange_Colour_triggered();
   void on_actionToggle_Visibility_triggered();
 
-  /* View menu */
+  /**
+   * @brief Captures the current VTK render window and saves it as a PNG.
+   */
+  void onScreenshotClicked();
+  ///@}
+
+
+  /** @name View menu */
+  ///@{
   void on_actionReset_View_triggered();
   void on_actionChange_Background_triggered();
-  void on_actionToggle_Shrink_triggered();
-  void on_actionToggle_Clip_triggered();
 
-  /* VR menu / toolbar */
+  /**
+   * @brief Toggles the selected model's shrink filter to a preset value.
+   */
+  void on_actionToggle_Shrink_triggered();
+
+  /**
+   * @brief Toggles the selected model's clip filter to a preset value.
+   */
+  void on_actionToggle_Clip_triggered();
+  ///@}
+
+  /** @name VR menu / toolbar */
+  ///@{
   void on_actionStart_VR_triggered();
   void on_actionStop_VR_triggered();
   void on_actionSync_VR_triggered();
   void on_actionToggle_VR_Rotation_triggered();
 
-  /* Help */
+  /** @name Help */
+  ///@{
   void on_actionAbout_triggered();
+  ///@}
 
-  /* Right-panel widgets */
+  /** @name Right-panel widgets */
+  ///@{
   void onResetViewClicked();
   void onChangeColourClicked();
   void onBackgroundColourClicked();
+  ///@}
+
+  /** @name Continuous slider filter handlers */
+  ///@{
   void onLightIntensityChanged(int value);
   /* Continuous-slider filter handlers, merged from the main branch. */
   void onShrinkSliderChanged(int value);

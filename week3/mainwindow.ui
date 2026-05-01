@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1200</width>
+    <width>1213</width>
     <height>780</height>
    </rect>
   </property>
@@ -329,6 +329,9 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
            </item>
            <item row="2" column="2">
             <widget class="QCheckBox" name="visibilityCheckBox">
+             <property name="toolTip">
+              <string>Show or hide the selected part in both views</string>
+             </property>
              <property name="text">
               <string>Visible</string>
              </property>
@@ -524,7 +527,7 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
              </property>
              <property name="icon">
               <iconset resource="icons.qrc">
-               <normaloff>:/Icons/icons/startVR.png</normaloff>:/Icons/icons/startVR.png</iconset>
+               <normaloff>:/Icons/icons/play.png</normaloff>:/Icons/icons/play.png</iconset>
              </property>
             </widget>
            </item>
@@ -535,12 +538,15 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
              </property>
              <property name="icon">
               <iconset resource="icons.qrc">
-               <normaloff>:/Icons/icons/stopVR.png</normaloff>:/Icons/icons/stopVR.png</iconset>
+               <normaloff>:/Icons/icons/stop.png</normaloff>:/Icons/icons/stop.png</iconset>
              </property>
             </widget>
            </item>
            <item>
             <widget class="QPushButton" name="vrSyncButton">
+             <property name="toolTip">
+              <string>Push current scene (filters, colours, visibility) into the running headset</string>
+             </property>
              <property name="text">
               <string>Sync GUI to VR</string>
              </property>
@@ -556,6 +562,19 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
              </property>
              <property name="toolTip">
               <string>Spin the model around Y axis inside VR. Same as pressing R. Text flips to "Stop Rotation" while spinning.</string>
+             </property>
+             <property name="checkable">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="vrRotateButton">
+             <property name="toolTip">
+              <string>Spin the model around Y axis inside VR. Same as pressing R.</string>
+             </property>
+             <property name="text">
+              <string>Rotate (R)</string>
              </property>
              <property name="checkable">
               <bool>true</bool>
@@ -624,8 +643,8 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1200</width>
-     <height>22</height>
+     <width>1213</width>
+     <height>26</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -696,6 +715,7 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
    <addaction name="actionOpen_File"/>
    <addaction name="actionOpen_Folder"/>
    <addaction name="actionSave"/>
+   <addaction name="actionScreenshot"/>
    <addaction name="actionPrint"/>
    <addaction name="separator"/>
    <addaction name="actionStart_VR"/>
@@ -707,7 +727,7 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
   <action name="actionOpen_File">
    <property name="icon">
     <iconset resource="icons.qrc">
-     <normaloff>:/Icons/icons/fileopen.png</normaloff>:/Icons/icons/fileopen.png</iconset>
+     <normaloff>:/Icons/icons/openfile.png</normaloff>:/Icons/icons/openfile.png</iconset>
    </property>
    <property name="text">
     <string>Open File</string>
@@ -719,7 +739,7 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
   <action name="actionOpen_Folder">
    <property name="icon">
     <iconset resource="icons.qrc">
-     <normaloff>:/Icons/icons/fileopen.png</normaloff>:/Icons/icons/fileopen.png</iconset>
+     <normaloff>:/Icons/icons/openfolder.png</normaloff>:/Icons/icons/openfolder.png</iconset>
    </property>
    <property name="text">
     <string>Open Folder</string>
@@ -731,7 +751,7 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
   <action name="actionSave">
    <property name="icon">
     <iconset resource="icons.qrc">
-     <normaloff>:/Icons/icons/filesave.png</normaloff>:/Icons/icons/filesave.png</iconset>
+     <normaloff>:/Icons/icons/save.png</normaloff>:/Icons/icons/save.png</iconset>
    </property>
    <property name="text">
     <string>Save</string>
@@ -743,7 +763,7 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
   <action name="actionPrint">
    <property name="icon">
     <iconset resource="icons.qrc">
-     <normaloff>:/Icons/icons/print.png</normaloff>:/Icons/icons/print.png</iconset>
+     <normaloff>:/Icons/icons/printer.png</normaloff>:/Icons/icons/printer.png</iconset>
    </property>
    <property name="text">
     <string>Print</string>
@@ -753,6 +773,10 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
    </property>
   </action>
   <action name="actionExit">
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/Icons/icons/exit.png</normaloff>:/Icons/icons/exit.png</iconset>
+   </property>
    <property name="text">
     <string>Exit</string>
    </property>
@@ -761,6 +785,10 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
    </property>
   </action>
   <action name="actionItem_Options">
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/Icons/icons/itemoptions.png</normaloff>:/Icons/icons/itemoptions.png</iconset>
+   </property>
    <property name="text">
     <string>Item Options</string>
    </property>
@@ -769,6 +797,10 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
    </property>
   </action>
   <action name="actionAdd_Item">
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/Icons/icons/additem.png</normaloff>:/Icons/icons/additem.png</iconset>
+   </property>
    <property name="text">
     <string>Add Item</string>
    </property>
@@ -777,6 +809,10 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
    </property>
   </action>
   <action name="actionRemove_Item">
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/Icons/icons/removeitem.png</normaloff>:/Icons/icons/removeitem.png</iconset>
+   </property>
    <property name="text">
     <string>Remove Item</string>
    </property>
@@ -793,30 +829,42 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
    </property>
   </action>
   <action name="actionChange_Background">
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/Icons/icons/backgroundcolor.png</normaloff>:/Icons/icons/backgroundcolor.png</iconset>
+   </property>
    <property name="text">
     <string>Change Background Colour</string>
    </property>
   </action>
   <action name="actionToggle_Shrink">
-   <property name="text">
-    <string>Toggle Shrink Filter</string>
-   </property>
    <property name="checkable">
     <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/Icons/icons/shrink.png</normaloff>:/Icons/icons/shrink.png</iconset>
+   </property>
+   <property name="text">
+    <string>Toggle Shrink Filter to 50%</string>
    </property>
   </action>
   <action name="actionToggle_Clip">
-   <property name="text">
-    <string>Toggle Clip Filter</string>
-   </property>
    <property name="checkable">
     <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/Icons/icons/chop.png</normaloff>:/Icons/icons/chop.png</iconset>
+   </property>
+   <property name="text">
+    <string>Toggle Clip Filter to 50%</string>
    </property>
   </action>
   <action name="actionStart_VR">
    <property name="icon">
     <iconset resource="icons.qrc">
-     <normaloff>:/Icons/icons/startVR.png</normaloff>:/Icons/icons/startVR.png</iconset>
+     <normaloff>:/Icons/icons/play.png</normaloff>:/Icons/icons/play.png</iconset>
    </property>
    <property name="text">
     <string>Start VR</string>
@@ -828,7 +876,7 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
   <action name="actionStop_VR">
    <property name="icon">
     <iconset resource="icons.qrc">
-     <normaloff>:/Icons/icons/stopVR.png</normaloff>:/Icons/icons/stopVR.png</iconset>
+     <normaloff>:/Icons/icons/stop.png</normaloff>:/Icons/icons/stop.png</iconset>
    </property>
    <property name="text">
     <string>Stop VR</string>

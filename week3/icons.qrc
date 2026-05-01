@@ -1,10 +1,25 @@
 <!DOCTYPE RCC><RCC version="1.0">
 <qresource prefix="/Icons">
-    <file>icons/fileopen.png</file>
-    <file>icons/filesave.png</file>
-    <file>icons/help.png</file>
-    <file>icons/print.png</file>
-    <file>icons/startVR.png</file>
-    <file>icons/stopVR.png</file>
+   	<file>icons/help.png</file>
+        <file>icons/help2.png</file>
+        <file>icons/openfile.png</file>
+        <file>icons/openfolder.png</file>
+        <file>icons/play.png</file>
+        <file>icons/printer.png</file>
+        <file>icons/screenshot.png</file>
+        <file>icons/stop.png</file>
+	<file>icons/save.png</file>
+	<file>icons/itemoptions.png</file>
+	<file>icons/additem.png</file>
+	<file>icons/removeitem.png</file>
+	<file>icons/visibility.png</file>
+	<file>icons/sync.png</file>
+	<file>icons/backgroundcolor.png</file>
+	<file>icons/modelcolor.png</file>
+	<file>icons/rotatecamera.png</file>
+	<file>icons/shrink.png</file>
+	<file>icons/chop.png</file>
+	<file>icons/exit.png</file>
+	<file>icons/nightmode.png</file>
 </qresource>
 </RCC>

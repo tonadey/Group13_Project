@@ -5,6 +5,7 @@
 #include <QStandardPaths>
 #include <QSurfaceFormat>
 #include <QVTKOpenGLNativeWidget.h>
+#include <QFont>
 
 #include <vtkFileOutputWindow.h>
 #include <vtkOutputWindow.h>

@@ -1,10 +1,6 @@
-/**     @file ModelPart.cpp
- *
- *     EEEE2076 - Software Engineering & VR Project
- *
- *     Template for model parts that will be added as treeview items
- *
- *     P Evans 2022
+/**
+ * @file ModelPart.cpp
+ * @brief Implements the model tree item and its VTK STL render pipeline.
  */
 
 #include "ModelPart.h"
@@ -22,6 +18,11 @@
 #include <vtkShrinkFilter.h>
 #include <vtkSmartPointer.h>
 
+/**
+ * @brief Creates a model part and synchronises its initial tree data.
+ * @param data Column data for the tree model.
+ * @param parent Parent model part, or nullptr for the root.
+ */
 ModelPart::ModelPart(const QList<QVariant> &data, ModelPart *parent)
     : m_itemData(data), m_parentItem(parent), isVisible(true), m_stlPath(""),
       m_R(255), m_G(255), m_B(255), m_clipFilter(false),
@@ -126,6 +127,9 @@ void ModelPart::setShrinkFilter(bool enabled) {
   refreshFilters();
 }
 
+/**
+ * @brief Rebuilds the VTK pipeline according to the current filter state.
+ */
 void ModelPart::refreshFilters() {
   if (!reader || !mapper)
     return;
@@ -271,6 +275,10 @@ vtkIdType ModelPart::getTriangleCount() const {
 
 vtkSmartPointer<vtkActor> ModelPart::getActor() { return actor; }
 
+/**
+ * @brief Builds a fresh actor graph for the VR renderer.
+ * @return New actor that mirrors the GUI actor's filters and visual state.
+ */
 vtkSmartPointer<vtkActor> ModelPart::getNewActor() {
   if (!reader)
     return nullptr;
