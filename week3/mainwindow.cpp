@@ -1175,46 +1175,58 @@ void MainWindow::onBackgroundColourClicked() {
 }
 
 void MainWindow::onLightIntensityChanged(int value) {
-  /* Slider 0..100. In whole-scene mode (default) it drives the single
-   * vtkLight that follows the camera, scaled 0..1.2 so the midpoint
-   * 50 sits at a comfortable 0.6 and 100 punches highlights.
+  /* Slider 0..100 -> per-part light factor 0..2 (value/50). The factor
+   * scales each part's ambient + diffuse coefficients via
+   * ModelPart::setLightFactor, which lets the user spotlight or dim
+   * individual parts instead of moving the single scene light.
    *
-   * In per-part mode (the "Per-Part Light" checkbox) it leaves the
-   * scene light alone and instead modulates the selected part's
-   * ambient + diffuse coefficients (m_lightFactor 0..2), which lets
-   * the user spotlight or dim one part without changing the rest of
-   * the scene. */
-  const bool perPart =
+   * Cascade semantics:
+   *   - "Per-Part Light" ticked: strict-leaf mode - only the selected
+   *     row gets the new factor, even if it's a folder. Folders without
+   *     STL data are no-ops in this mode.
+   *   - Otherwise (default): walk the selected subtree via
+   *     applyLightFactorToTree, so picking a folder cascades the same
+   *     factor onto every leaf underneath.
+   *
+   * The scene light kept by setupLighting() stays at its default 1.0
+   * so the renderer still has illumination if no part has had a factor
+   * set yet. */
+  QModelIndex index = ui->treeView->currentIndex();
+  if (!index.isValid()) {
+    emit statusUpdateMessage(
+        tr("Select an item before adjusting the light slider."), 0);
+    return;
+  }
+  ModelPart *selectedPart =
+      static_cast<ModelPart *>(index.internalPointer());
+  const double factor = value / 50.0; /* 0..2.0 */
+
+  const bool strictLeaf =
       ui->perPartLightCheckBox && ui->perPartLightCheckBox->isChecked();
 
-  if (perPart) {
-    QModelIndex index = ui->treeView->currentIndex();
-    ModelPart *selectedPart =
-        index.isValid() ? static_cast<ModelPart *>(index.internalPointer())
-                        : nullptr;
-    if (!selectedPart) {
+  if (strictLeaf) {
+    if (!selectedPart || selectedPart->getStlPath().isEmpty()) {
       emit statusUpdateMessage(
-          tr("Per-Part Light: select an item in the tree first."), 0);
+          tr("Per-Part Light: select a leaf (STL part), not a folder."), 0);
       return;
     }
-    double factor = value / 50.0; /* 0..2.0 */
     selectedPart->setLightFactor(factor);
-    renderWindow->Render();
-    scheduleVRSync();
     emit statusUpdateMessage(
-        tr("Light factor for %1: %2")
+        tr("Light (leaf %1): %2")
             .arg(selectedPart->data(0).toString())
             .arg(factor, 0, 'f', 2),
         0);
-    return;
+  } else {
+    applyLightFactorToTree(index, factor);
+    emit statusUpdateMessage(
+        tr("Light (subtree of %1): %2")
+            .arg(selectedPart ? selectedPart->data(0).toString()
+                              : QStringLiteral("(root)"))
+            .arg(factor, 0, 'f', 2),
+        0);
   }
-
-  if (sceneLight) {
-    double intensity = value / 100.0 * 1.2;
-    sceneLight->SetIntensity(intensity);
-    renderWindow->Render();
-  }
-  emit statusUpdateMessage(QString("Light intensity: %1").arg(value), 0);
+  renderWindow->Render();
+  scheduleVRSync();
 }
 
 void MainWindow::setupLighting() {
