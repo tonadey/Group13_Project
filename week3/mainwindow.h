@@ -56,17 +56,16 @@ public:
   ~MainWindow();
 
 protected:
-  /**
-   * @brief Handles window close events and safely shuts down VR.
-   * @param event Close event.
-   */
+  /** Catch the user closing the window so we can shut down the VR
+   *  thread cleanly (otherwise SteamVR can hold the compositor and
+   *  refuse new sessions until restarted). */
   void closeEvent(QCloseEvent *event) override;
 
-  /**
-   * @brief Intercepts mouse events from the VTK widget.
-   *
-   * Used to detect clicks vs drags and enable part selection.
-   */
+  /** Event filter installed on the vtkWidget so we can detect a
+   *  click without interfering with the trackball interactor's
+   *  rotate/pan/zoom. We track the press position and only treat
+   *  a release as a "pick" if the cursor barely moved - drags fall
+   *  through to VTK as usual. */
   bool eventFilter(QObject *watched, QEvent *event) override;
 
 signals:
@@ -107,10 +106,6 @@ public slots:
   void on_actionRemove_Item_triggered();
   void on_actionChange_Colour_triggered();
   void on_actionToggle_Visibility_triggered();
-  /**
-   * @brief Opens a file dialog and saves a screenshot of the viewport.
-   */
-  void on_actionScreenshot_triggered();
 
   /**
    * @brief Captures the current VTK render window and saves it as a PNG.
@@ -141,7 +136,6 @@ public slots:
   void on_actionStop_VR_triggered();
   void on_actionSync_VR_triggered();
   void on_actionToggle_VR_Rotation_triggered();
-  ///@}
 
   /** @name Help */
   ///@{
@@ -158,31 +152,27 @@ public slots:
   /** @name Continuous slider filter handlers */
   ///@{
   void onLightIntensityChanged(int value);
+  /* Continuous-slider filter handlers, merged from the main branch. */
   void onShrinkSliderChanged(int value);
   void onClipSliderChanged(int value);
-  ///@}
-
-  /** @name Exploded view controls */
-  ///@{
+  /* Animated one-click explode. The button is checkable: clicking
+   * toggles between "fly the parts apart" (target = 1.0) and "bring
+   * them back" (target = 0.0). A QTimer drives the transition over
+   * ~1s of wall time; onExplodeAnimTick() advances progress and
+   * pushes the new offset to every part. The mode dropdown picks
+   * which direction (Spherical / X / Y / Z). */
   void onExplodeButtonClicked(bool checked);
   void onExplodeModeChanged(int index);
   void onExplodeAnimTick();
-  ///@}
 
-  /**
-   * @name X-ray and VR sync controls
-   *
-   * The opacity slider drives transparency for
+  /* X-ray (global transparency) handlers. Slider drives opacity for
    * every visible part; the Solid button snaps it back to 100% so
-   * the user can flip in/out of see-through mode in one click.
-   */
-  ///@{
+   * the user can flip in/out of see-through mode in one click. */
   void onOpacitySliderChanged(int value);
   void onOpacitySolidClicked();
   void onVisibilityToggled(bool checked);
   void onSyncVRClicked();
   void onToggleVRRotation();
-  ///@}
 
 private:
   Ui::MainWindow *ui;
@@ -214,23 +204,22 @@ private:
    * "just works"), then updated to the last directory the user picked. */
   QString lastBrowsedDir;
 
-  /** Applies the current light setup to the VTK scene. */
   void setupLighting();
-  /**
-   * @brief Updates the desktop render window after changes to the model tree.
-   *
-   * The renderer is updated by comparing the current scene actors with the
-   * actors required by the tree, so only added or removed actors are changed.
-   */
+  /* Diff-based scene sync: walk the tree to compute the desired actor
+   * set, walk the renderer's current props, then add only what's new
+   * and remove only what's stale. Cheap to call after any tree edit
+   * (open file/folder, remove, edit) - O(N) instead of the old version
+   * that did RemoveAllViewProps + re-add of every actor on every call.
+   * At 4000+ parts the old path was the dominant cost of any tree
+   * mutation; this one only touches the deltas. */
   void updateRender();
   void collectTreeActors(const QModelIndex &index,
                          QSet<vtkActor *> &out) const;
 
-  /**
- * @brief Sends all visible loaded model parts to the VR render thread.
- * @param index Starting tree index for the recursive search.
- * @return Number of actors queued for VR rendering.
- */
+  /* Walk the tree and push a fresh actor for every visible part to the
+   * VR thread. Used by Start VR and the manual Sync button. Returns
+   * the number of actors actually queued so callers can sanity-check
+   * that the tree is non-empty before starting VR. */
   int pushTreeActorsToVR(const QModelIndex &index);
 
   /* Auto-sync is wired into every GUI change that affects what should be
@@ -246,6 +235,17 @@ private:
   void scheduleVRSync();
   void doVRSync();
   QTimer *m_vrSyncDebounce = nullptr;
+
+  /* "Apply to all" recursion helpers. Each walks the full tree and
+   * stamps the same colour / shrink / clip / light state onto every
+   * part that has an STL loaded. Used when the right-panel "Apply to
+   * all" check boxes are ticked, so a single slider drag or colour
+   * pick affects the whole assembly instead of just the current row. */
+  void applyColourToTree(const QModelIndex &index, unsigned char R,
+                         unsigned char G, unsigned char B);
+  void applyShrinkFactorToTree(const QModelIndex &index, double factor);
+  void applyClipSliderToTree(const QModelIndex &index, int sliderValue);
+  void applyLightFactorToTree(const QModelIndex &index, double factor);
 
   /* Toggle the visibility of a tree row AND every descendant. Used
    * when the user (un)checks a folder row in the tree - we want all
