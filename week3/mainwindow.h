@@ -11,6 +11,7 @@
 #define MAINWINDOW_H
 
 #include <QElapsedTimer>
+#include <QHash>
 #include <QMainWindow>
 #include <QSet>
 #include <QTimer>
@@ -238,6 +239,30 @@ private:
   void scheduleVRSync();
   void doVRSync();
   QTimer *m_vrSyncDebounce = nullptr;
+
+  /* Desktop trackball -> VR camera follow. The polling timer reads the
+   * desktop camera azimuth/elevation every ~33ms and, if either has
+   * drifted from the last value pushed to VR, sends the delta as a
+   * one-shot ROTATE_BY_Y / ROTATE_BY_X command. Polling is gentler than
+   * subscribing to vtkCamera::ModifiedEvent because the trackball
+   * mutates the camera many times per drag - polling at 30Hz coalesces
+   * those into one rotation per VR frame. */
+  void syncCameraToVR();
+  double computeCameraAzimuth() const;
+  double computeCameraElevation() const;
+  QTimer *m_cameraSyncTimer = nullptr;
+  double m_lastSyncedAzimuth = 0.0;
+  double m_lastSyncedElevation = 0.0;
+
+  /* VR -> GUI sync: VRRenderThread emits actorMovedInVR when the OpenVR
+   * controller grip-drags an actor away from where we placed it. We
+   * keep a flat actor*->ModelPart* map so the slot can find the matching
+   * ModelPart and translate the VR-frame delta back into GUI mm. The
+   * map is populated in pushTreeActorsToVR and cleared in doVRSync
+   * (after CLEAR_SCENE) so stale actor pointers from a previous push
+   * aren't dereferenced. */
+  QHash<void *, ModelPart *> m_vrActorToPart;
+  void onVRActorMoved(void *actor, double dxVR, double dyVR, double dzVR);
 
   /* "Apply to all" recursion helpers. Each walks the full tree and
    * stamps the same colour / shrink / clip / light state onto every

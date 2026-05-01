@@ -134,6 +134,14 @@ MainWindow::MainWindow(QWidget *parent)
   m_vrSyncDebounce->setSingleShot(true);
   m_vrSyncDebounce->setInterval(100);
   connect(m_vrSyncDebounce, &QTimer::timeout, this, &MainWindow::doVRSync);
+
+  /* 30Hz polling timer for the desktop trackball -> VR camera-follow.
+   * Starts when Start VR fires, stops on Stop VR. Owned by MainWindow
+   * so it dies with the window. */
+  m_cameraSyncTimer = new QTimer(this);
+  m_cameraSyncTimer->setInterval(33);
+  connect(m_cameraSyncTimer, &QTimer::timeout, this,
+          &MainWindow::syncCameraToVR);
   /* Animated one-click explode + direction dropdown. The QTimer
    * (created lazily on first click) drives a 1-second transition;
    * see onExplodeButtonClicked / onExplodeAnimTick for the loop. */
@@ -410,6 +418,10 @@ void MainWindow::closeEvent(QCloseEvent *event) {
       event->ignore();
       return;
     }
+    if (m_cameraSyncTimer)
+      m_cameraSyncTimer->stop();
+    if (m_vrSyncDebounce)
+      m_vrSyncDebounce->stop();
     vrThread->issueCommand(VRRenderThread::END_RENDER, 0.0);
     if (!vrThread->wait(3000)) {
       qWarning() << "VR thread did not exit within 3s; terminating.";
@@ -418,6 +430,7 @@ void MainWindow::closeEvent(QCloseEvent *event) {
     }
     delete vrThread;
     vrThread = nullptr;
+    m_vrActorToPart.clear();
   }
   event->accept();
 }
@@ -1042,6 +1055,23 @@ void MainWindow::on_actionStart_VR_triggered() {
   vrThread->start();
   refreshWindowTitle();
 
+  /* VR -> GUI feedback loop: VRRenderThread emits actorMovedInVR
+   * whenever the OpenVR controller drags an actor. Use a queued
+   * connection so the slot runs on the GUI thread; the signal is
+   * fired from the VR worker thread. */
+  connect(vrThread, &VRRenderThread::actorMovedInVR, this,
+          &MainWindow::onVRActorMoved, Qt::QueuedConnection);
+
+  /* Desktop trackball -> VR rotation follow. Start polling the camera
+   * pose now that the VR thread is alive; syncCameraToVR is the no-op
+   * when the thread isn't running, but the explicit start/stop here
+   * keeps timer activity scoped to the VR session. */
+  if (m_cameraSyncTimer) {
+    m_lastSyncedAzimuth = computeCameraAzimuth();
+    m_lastSyncedElevation = computeCameraElevation();
+    m_cameraSyncTimer->start();
+  }
+
   emit statusUpdateMessage(
       tr("VR started (%1 triangles).")
           .arg(QLocale::system().toString(qlonglong(totalTris))),
@@ -1057,10 +1087,21 @@ void MainWindow::on_actionStop_VR_triggered() {
     return;
   }
 
+  /* Stop the camera-follow + VR-sync timers BEFORE tearing down the
+   * thread so neither timer can fire one last tick into a half-
+   * destructed VR thread and crash the next Start VR. */
+  if (m_cameraSyncTimer)
+    m_cameraSyncTimer->stop();
+  if (m_vrSyncDebounce)
+    m_vrSyncDebounce->stop();
+
   vrThread->issueCommand(VRRenderThread::END_RENDER, 0.0);
   vrThread->wait();
   delete vrThread;
   vrThread = nullptr;
+  /* Stale actor* pointers from the dead VR session - drop them so the
+   * next Start VR's pushTreeActorsToVR fills the map fresh. */
+  m_vrActorToPart.clear();
   vrRotating = false;
   ui->vrRotateButton->blockSignals(true);
   ui->vrRotateButton->setChecked(false);
@@ -1410,7 +1451,126 @@ void MainWindow::doVRSync() {
    * state on every call - that's what carries colour, shrink, clip,
    * opacity, and visibility into VR. */
   vrThread->issueCommand(VRRenderThread::CLEAR_SCENE, 0.0);
+  /* Stale actor pointers from the previous push are about to be
+   * destroyed VR-side. Wipe the actor->part map so the next
+   * actorMovedInVR doesn't dereference a dead actor. */
+  m_vrActorToPart.clear();
   pushTreeActorsToVR(QModelIndex());
+}
+
+double MainWindow::computeCameraAzimuth() const {
+  if (!renderer)
+    return 0.0;
+  vtkCamera *cam = renderer->GetActiveCamera();
+  if (!cam)
+    return 0.0;
+  double pos[3], focal[3];
+  cam->GetPosition(pos);
+  cam->GetFocalPoint(focal);
+  /* Azimuth = horizontal angle of the camera around the focal point.
+   * Project the (camera - focal) vector onto the XZ plane and read its
+   * angle. atan2(x, z) means angle 0 looks down +Z and positive rotates
+   * toward +X (clockwise when viewed from +Y). The sign here matches
+   * what the trackball produces, so a horizontal drag of the desktop
+   * view spins the VR model the same direction. */
+  const double vx = pos[0] - focal[0];
+  const double vz = pos[2] - focal[2];
+  return std::atan2(vx, vz) * 180.0 / 3.14159265358979323846;
+}
+
+double MainWindow::computeCameraElevation() const {
+  if (!renderer)
+    return 0.0;
+  vtkCamera *cam = renderer->GetActiveCamera();
+  if (!cam)
+    return 0.0;
+  double pos[3], focal[3];
+  cam->GetPosition(pos);
+  cam->GetFocalPoint(focal);
+  /* Elevation = vertical angle of the camera vector. Compare the Y
+   * component to the XZ plane radius. We send this as a pitch nudge
+   * to the VR thread so tilting the desktop trackball up/down also
+   * tilts the VR model up/down. */
+  const double vx = pos[0] - focal[0];
+  const double vy = pos[1] - focal[1];
+  const double vz = pos[2] - focal[2];
+  const double rxz = std::sqrt(vx * vx + vz * vz);
+  return std::atan2(vy, rxz) * 180.0 / 3.14159265358979323846;
+}
+
+void MainWindow::syncCameraToVR() {
+  /* Belt and braces: the timer is stopped on Stop VR / close, but if
+   * the VR thread crashed mid-session the isRunning() check still
+   * keeps us from sending into a dead thread. */
+  if (!vrThread || !vrThread->isRunning())
+    return;
+
+  double az = computeCameraAzimuth();
+  double yawDelta = az - m_lastSyncedAzimuth;
+  /* Wrap the delta into (-180, 180] so spinning past the +/-180
+   * boundary doesn't make the VR scene snap 360 degrees the wrong
+   * way. */
+  while (yawDelta > 180.0)
+    yawDelta -= 360.0;
+  while (yawDelta < -180.0)
+    yawDelta += 360.0;
+
+  /* 0.1 deg dead-band: ignore rounding noise from atan2 when the
+   * camera isn't actually moving, so we don't dribble RotateY(0.001)s
+   * into the VR thread every tick. */
+  if (std::abs(yawDelta) > 0.1) {
+    vrThread->issueCommand(VRRenderThread::ROTATE_BY_Y, yawDelta);
+    m_lastSyncedAzimuth = az;
+  }
+
+  double el = computeCameraElevation();
+  double pitchDelta = el - m_lastSyncedElevation;
+  /* Elevation is bounded to (-90, 90) so no 180 wrap needed. */
+  if (std::abs(pitchDelta) > 0.1) {
+    vrThread->issueCommand(VRRenderThread::ROTATE_BY_X, pitchDelta);
+    m_lastSyncedElevation = el;
+  }
+}
+
+void MainWindow::onVRActorMoved(void *actor, double dxVR, double dyVR,
+                                double dzVR) {
+  /* The VR thread saw a controller drag move this actor by (dxVR,
+   * dyVR, dzVR) metres in the VR world frame (post-rotation,
+   * post-scale). Mirror it back to the desktop side so the user
+   * doesn't see the part lock to the headset and snap back to its
+   * old desktop position the next time something triggers a sync.
+   *
+   * Two coordinate transforms to undo:
+   *   1. addActorOffline applies SetScale(kModelScale) - so 1 VR
+   *      metre corresponds to (1 / kModelScale) GUI mm.
+   *   2. addActorOffline applies RotateX(-90), which maps GUI vector
+   *      (x, y, z) -> VR vector (x, z, -y). The inverse is
+   *      VR (x_v, y_v, z_v) -> GUI (x_v, -z_v, y_v). */
+  auto it = m_vrActorToPart.find(actor);
+  if (it == m_vrActorToPart.end())
+    return;
+  ModelPart *part = it.value();
+  if (!part)
+    return;
+
+  const double inv = 1.0 / VRRenderThread::kModelScale;
+  const double dxGui = dxVR * inv;
+  const double dyGui = -dzVR * inv;
+  const double dzGui = dyVR * inv;
+
+  double curOff[3];
+  part->getExplodeOffset(curOff);
+  /* setExplodeOffset both updates m_explodeOffset and re-positions
+   * the GUI actor, so the desktop view follows the drag without an
+   * explicit ResetCamera or Render-from-here. */
+  part->setExplodeOffset(curOff[0] + dxGui, curOff[1] + dyGui,
+                         curOff[2] + dzGui);
+  renderWindow->Render();
+  /* Deliberately NO scheduleVRSync() here: the VR actor is already
+   * at the new position (that's what fired the signal); a sync
+   * would CLEAR_SCENE + push fresh actors during an ongoing
+   * controller interaction, causing a visible flicker and possibly
+   * dropping the user's grip mid-drag. */
 }
 
 void MainWindow::onToggleVRRotation() {
@@ -1455,6 +1615,11 @@ int MainWindow::pushTreeActorsToVR(const QModelIndex &index) {
       vtkSmartPointer<vtkActor> vrActor = part->getNewActor();
       if (vrActor) {
         vrThread->addActorOffline(vrActor);
+        /* Remember actor->part so VRRenderThread::actorMovedInVR
+         * (emitted when the user grip-drags this actor with a VR
+         * controller) can find the matching ModelPart and translate
+         * the drag back into GUI coordinates. */
+        m_vrActorToPart.insert(static_cast<void *>(vrActor.Get()), part);
         ++pushed;
       } else {
         qWarning() << "pushTreeActorsToVR: getNewActor() returned null for"
