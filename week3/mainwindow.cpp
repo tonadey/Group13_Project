@@ -33,6 +33,7 @@
 #include <QProgressDialog>
 #include <QPushButton>
 #include <QSet>
+#include <QSignalBlocker>
 #include <QStyle>
 #include <QTreeView>
 #include <QVBoxLayout>
@@ -1152,11 +1153,30 @@ void MainWindow::on_actionAbout_triggered() {
 }
 
 void MainWindow::onResetViewClicked() {
+  /* "Reset View" returns the scene to the layout the user saw on first
+   * load. That means: stop any running explode animation, clear every
+   * part's explode offset (which also wipes manual drag offsets, since
+   * drag stores into the same field), un-toggle the Explode button, and
+   * then re-frame the camera. applyExplosion(0.0, ...) writes 0/0/0
+   * into each visible part's offset via translatePartsForExplosion. */
+  if (explodeTimer && explodeTimer->isActive())
+    explodeTimer->stop();
+  m_explodeStart = 0.0;
+  m_explodeTarget = 0.0;
+  m_explodeProgress = 0.0;
+  applyExplosion(0.0, m_explodeMode);
+  if (ui->explodeButton) {
+    QSignalBlocker block(ui->explodeButton);
+    ui->explodeButton->setChecked(false);
+    ui->explodeButton->setText(tr("Explode"));
+  }
+
   renderer->ResetCamera();
   renderer->GetActiveCamera()->Azimuth(30);
   renderer->GetActiveCamera()->Elevation(30);
   renderer->ResetCameraClippingRange();
   renderWindow->Render();
+  scheduleVRSync();
   emit statusUpdateMessage(tr("View reset"), 0);
 }
 
