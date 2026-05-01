@@ -1267,6 +1267,15 @@ void MainWindow::onShrinkSliderChanged(int value) {
 }
 
 void MainWindow::onClipSliderChanged(int value) {
+  /* Cascade semantics:
+   *   - "Apply to all" ticked: walk from the root (every loaded part).
+   *   - Otherwise: walk the selected subtree via applyClipSliderToTree.
+   *     That helper recomputes each part's actualX from its OWN
+   *     original X bounds (cached at load time, not the live actor
+   *     bounds which shrink as soon as the clip filter cuts geometry),
+   *     so the slider value maps to the right local cut on every leaf.
+   *     Folder selection clips every leaf underneath; leaf selection
+   *     clips only that leaf. */
   const bool applyToAll =
       ui->applyAllClipCheckBox && ui->applyAllClipCheckBox->isChecked();
   if (applyToAll) {
@@ -1283,35 +1292,17 @@ void MainWindow::onClipSliderChanged(int value) {
         tr("Select an item before adjusting the clip slider."), 0);
     return;
   }
-  ModelPart *selectedPart = static_cast<ModelPart *>(index.internalPointer());
-  if (!selectedPart || !selectedPart->getActor())
-    return;
 
-  /* Use the ORIGINAL bounds (cached at load time), not the actor's current
-   * bounds: once the clip filter cuts away part of the geometry the runtime
-   * bounds shrink, so a second slider drag would map to a smaller range and
-   * the slider would gradually lose effective travel. Fix from origin/Toni. */
-  double bounds[6];
-  selectedPart->getOriginalBounds(bounds);
-  double minX = bounds[0];
-  double maxX = bounds[1];
-  double width = maxX - minX;
-
-  double actualX;
-  if (value == 0) {
-    /* Park the clip plane just outside the model on the -X side so nothing
-     * is cut. This lets the user "turn the clip off" by dragging the slider
-     * back to 0 without us having to actually disable m_clipFilter (which
-     * would require rebuilding the filter chain on every toggle). */
-    actualX = minX - 0.1 * width;
-  } else {
-    actualX = minX + (double(value) / 100.0) * width;
-  }
-
-  selectedPart->applyClipping(actualX);
+  applyClipSliderToTree(index, value);
   renderWindow->Render();
   scheduleVRSync();
-  emit statusUpdateMessage(tr("Clip X: %1").arg(actualX, 0, 'f', 2), 0);
+  ModelPart *selectedPart = static_cast<ModelPart *>(index.internalPointer());
+  emit statusUpdateMessage(
+      tr("Clip %1: slider=%2")
+          .arg(selectedPart ? selectedPart->data(0).toString()
+                            : QStringLiteral("(subtree)"))
+          .arg(value),
+      0);
 }
 
 void MainWindow::setVisibilityRecursive(const QModelIndex &index,
