@@ -90,6 +90,13 @@ public:
   void setOpacity(double opacity);
   double getOpacity() const { return m_opacity; }
 
+  /** Per-part light intensity factor. Modulates this part's ambient and
+   *  diffuse lighting coefficients so the user can highlight or dim a
+   *  single part without touching the scene-level light. 1.0 = default,
+   *  0.0 = pitch dark, 2.0 = saturated bright. */
+  void setLightFactor(double factor);
+  double getLightFactor() const { return m_lightFactor; }
+
   /** Rebuild the mapper input chain (reader -> [filters] -> mapper)
    *  according to the current filter flags. */
   void refreshFilters();
@@ -134,6 +141,9 @@ private:
   /* X-ray opacity in [0..1]. Driven by the Opacity slider in
    * MainWindow's right-hand panel. 1.0 = solid (default). */
   double m_opacity = 1.0;
+
+  /* Per-part light factor; 1.0 = default lighting. */
+  double m_lightFactor = 1.0;
 
   vtkSmartPointer<vtkSTLReader> reader;
   vtkSmartPointer<vtkPolyDataMapper> mapper;

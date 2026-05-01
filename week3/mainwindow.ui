@@ -426,6 +426,73 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
              </property>
             </widget>
            </item>
+           <item row="6" column="0" colspan="3">
+            <layout class="QHBoxLayout" name="applyToAllRow">
+             <item>
+              <widget class="QLabel" name="applyToAllLabel">
+               <property name="text">
+                <string>Apply to all:</string>
+               </property>
+               <property name="toolTip">
+                <string>Tick a box to make the matching control act on every loaded part instead of just the selected one.</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QCheckBox" name="applyAllColourCheckBox">
+               <property name="text">
+                <string>Colour</string>
+               </property>
+               <property name="toolTip">
+                <string>When checked, Change Model Colour stamps the chosen colour onto every loaded part.</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QCheckBox" name="applyAllShrinkCheckBox">
+               <property name="text">
+                <string>Shrink</string>
+               </property>
+               <property name="toolTip">
+                <string>When checked, the Shrink slider applies the same factor to every loaded part.</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QCheckBox" name="applyAllClipCheckBox">
+               <property name="text">
+                <string>Clip</string>
+               </property>
+               <property name="toolTip">
+                <string>When checked, the Clip slider clips every loaded part using each part's own X bounds.</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="applyToAllSpacer">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>20</width>
+                 <height>10</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item>
+              <widget class="QCheckBox" name="perPartLightCheckBox">
+               <property name="text">
+                <string>Per-Part Light</string>
+               </property>
+               <property name="toolTip">
+                <string>When checked, the Light Intensity slider modulates only the selected part's brightness instead of the scene light.</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
           </layout>
          </widget>
         </item>
@@ -485,10 +552,10 @@ QMenu::item:selected { background: #4a90d9; color: #ffffff; }</string>
            <item>
             <widget class="QPushButton" name="vrRotateButton">
              <property name="text">
-              <string>Rotate (R)</string>
+              <string>Start Rotation (R)</string>
              </property>
              <property name="toolTip">
-              <string>Spin the model around Y axis inside VR. Same as pressing R.</string>
+              <string>Spin the model around Y axis inside VR. Same as pressing R. Text flips to "Stop Rotation" while spinning.</string>
              </property>
              <property name="checkable">
               <bool>true</bool>

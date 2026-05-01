@@ -167,6 +167,17 @@ private:
   void doVRSync();
   QTimer *m_vrSyncDebounce = nullptr;
 
+  /* "Apply to all" recursion helpers. Each walks the full tree and
+   * stamps the same colour / shrink / clip / light state onto every
+   * part that has an STL loaded. Used when the right-panel "Apply to
+   * all" check boxes are ticked, so a single slider drag or colour
+   * pick affects the whole assembly instead of just the current row. */
+  void applyColourToTree(const QModelIndex &index, unsigned char R,
+                         unsigned char G, unsigned char B);
+  void applyShrinkFactorToTree(const QModelIndex &index, double factor);
+  void applyClipSliderToTree(const QModelIndex &index, int sliderValue);
+  void applyLightFactorToTree(const QModelIndex &index, double factor);
+
   /* Toggle the visibility of a tree row AND every descendant. Used
    * when the user (un)checks a folder row in the tree - we want all
    * the STL parts inside it to follow the parent's state, otherwise

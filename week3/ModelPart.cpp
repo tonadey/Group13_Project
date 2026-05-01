@@ -251,6 +251,8 @@ bool ModelPart::loadSTL(QString fileName, QString *errorMsg) {
   actor->GetBounds(originalBounds);
   actor->GetProperty()->SetColor(m_R / 255.0, m_G / 255.0, m_B / 255.0);
   actor->GetProperty()->SetOpacity(m_opacity);
+  actor->GetProperty()->SetAmbient(0.2 * m_lightFactor);
+  actor->GetProperty()->SetDiffuse(1.0 * m_lightFactor);
   actor->SetVisibility(isVisible);
 
   refreshFilters();
@@ -361,8 +363,9 @@ vtkSmartPointer<vtkActor> ModelPart::getNewActor() {
   vtkProperty *prop = newActor->GetProperty();
   prop->SetColor(m_R / 255.0, m_G / 255.0, m_B / 255.0);
   prop->SetOpacity(m_opacity);
-  prop->SetAmbient(0.3);
-  prop->SetDiffuse(0.8);
+  /* Per-part light factor: scales the standard 0.3/0.8 VR ambient/diffuse. */
+  prop->SetAmbient(0.3 * m_lightFactor);
+  prop->SetDiffuse(0.8 * m_lightFactor);
   prop->SetSpecular(0.3);
   prop->SetSpecularPower(20);
   newActor->SetVisibility(isVisible);
@@ -400,4 +403,19 @@ void ModelPart::setOpacity(double opacity) {
   m_opacity = opacity;
   if (actor)
     actor->GetProperty()->SetOpacity(opacity);
+}
+
+void ModelPart::setLightFactor(double factor) {
+  /* Clamp to [0..2] - VTK lighting coefficients beyond ~2 saturate to
+   * fully white, so further increase does nothing visible. */
+  if (factor < 0.0)
+    factor = 0.0;
+  else if (factor > 2.0)
+    factor = 2.0;
+  m_lightFactor = factor;
+  if (actor) {
+    /* 0.2 / 1.0 are the same defaults loadSTL leaves on the actor. */
+    actor->GetProperty()->SetAmbient(0.2 * factor);
+    actor->GetProperty()->SetDiffuse(1.0 * factor);
+  }
 }

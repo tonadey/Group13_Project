@@ -1024,6 +1024,7 @@ void MainWindow::on_actionStop_VR_triggered() {
   vrRotating = false;
   ui->vrRotateButton->blockSignals(true);
   ui->vrRotateButton->setChecked(false);
+  ui->vrRotateButton->setText(tr("Start Rotation (R)"));
   ui->vrRotateButton->blockSignals(false);
   refreshWindowTitle();
 
@@ -1079,30 +1080,51 @@ void MainWindow::onResetViewClicked() {
 }
 
 void MainWindow::onChangeColourClicked() {
+  /* "Apply to all" mode: skip the per-part guard and stamp the chosen
+   * colour onto every loaded part in the tree. The dialog seeds from
+   * the currently selected part if any (so the user has a sensible
+   * starting colour), otherwise from white. */
+  const bool applyToAll = ui->applyAllColourCheckBox &&
+                          ui->applyAllColourCheckBox->isChecked();
+
   QModelIndex index = ui->treeView->currentIndex();
-  if (!index.isValid()) {
+  ModelPart *selectedPart =
+      index.isValid() ? static_cast<ModelPart *>(index.internalPointer())
+                      : nullptr;
+
+  if (!applyToAll && !selectedPart) {
     emit statusUpdateMessage(
         tr("Cannot change colour: no item selected in the tree."), 0);
     return;
   }
 
-  ModelPart *selectedPart = static_cast<ModelPart *>(index.internalPointer());
-  QColor initial(selectedPart->getColourR(), selectedPart->getColourG(),
-                 selectedPart->getColourB());
+  QColor initial = selectedPart
+                       ? QColor(selectedPart->getColourR(),
+                                selectedPart->getColourG(),
+                                selectedPart->getColourB())
+                       : QColor(Qt::white);
 
-  QColor chosen = QColorDialog::getColor(initial, this, tr("Choose Part Colour"));
+  QColor chosen =
+      QColorDialog::getColor(initial, this, tr("Choose Part Colour"));
   if (!chosen.isValid())
     return;
 
-  selectedPart->setColour(chosen.red(), chosen.green(), chosen.blue());
-  if (selectedPart->getActor()) {
-    selectedPart->getActor()->GetProperty()->SetColor(
-        chosen.redF(), chosen.greenF(), chosen.blueF());
+  if (applyToAll) {
+    applyColourToTree(QModelIndex(), chosen.red(), chosen.green(),
+                      chosen.blue());
+    emit statusUpdateMessage(tr("Changed colour for ALL parts"), 0);
+  } else {
+    selectedPart->setColour(chosen.red(), chosen.green(), chosen.blue());
+    if (selectedPart->getActor()) {
+      selectedPart->getActor()->GetProperty()->SetColor(
+          chosen.redF(), chosen.greenF(), chosen.blueF());
+    }
+    emit statusUpdateMessage(
+        tr("Changed colour for: ") + selectedPart->data(0).toString(), 0);
   }
   renderWindow->Render();
   /* Marksheet: "VR updates colour in real-time (no need to restart)". */
   scheduleVRSync();
-  emit statusUpdateMessage(tr("Changed colour for: ") + selectedPart->data(0).toString(), 0);
 }
 
 void MainWindow::onBackgroundColourClicked() {
@@ -1119,8 +1141,40 @@ void MainWindow::onBackgroundColourClicked() {
 }
 
 void MainWindow::onLightIntensityChanged(int value) {
-  /* Slider is 0..100; map to 0..1.2 so the midpoint 50 gives a
-   * comfortable 0.6 intensity and 100 a slightly punchy highlight. */
+  /* Slider 0..100. In whole-scene mode (default) it drives the single
+   * vtkLight that follows the camera, scaled 0..1.2 so the midpoint
+   * 50 sits at a comfortable 0.6 and 100 punches highlights.
+   *
+   * In per-part mode (the "Per-Part Light" checkbox) it leaves the
+   * scene light alone and instead modulates the selected part's
+   * ambient + diffuse coefficients (m_lightFactor 0..2), which lets
+   * the user spotlight or dim one part without changing the rest of
+   * the scene. */
+  const bool perPart =
+      ui->perPartLightCheckBox && ui->perPartLightCheckBox->isChecked();
+
+  if (perPart) {
+    QModelIndex index = ui->treeView->currentIndex();
+    ModelPart *selectedPart =
+        index.isValid() ? static_cast<ModelPart *>(index.internalPointer())
+                        : nullptr;
+    if (!selectedPart) {
+      emit statusUpdateMessage(
+          tr("Per-Part Light: select an item in the tree first."), 0);
+      return;
+    }
+    double factor = value / 50.0; /* 0..2.0 */
+    selectedPart->setLightFactor(factor);
+    renderWindow->Render();
+    scheduleVRSync();
+    emit statusUpdateMessage(
+        tr("Light factor for %1: %2")
+            .arg(selectedPart->data(0).toString())
+            .arg(factor, 0, 'f', 2),
+        0);
+    return;
+  }
+
   if (sceneLight) {
     double intensity = value / 100.0 * 1.2;
     sceneLight->SetIntensity(intensity);
@@ -1138,6 +1192,21 @@ void MainWindow::setupLighting() {
 }
 
 void MainWindow::onShrinkSliderChanged(int value) {
+  /* Slider 0   -> factor 1.0 (no shrink).
+   * Slider 100 -> factor 0.0 (max shrink). */
+  double factor = (100.0 - value) / 100.0;
+
+  const bool applyToAll = ui->applyAllShrinkCheckBox &&
+                          ui->applyAllShrinkCheckBox->isChecked();
+  if (applyToAll) {
+    applyShrinkFactorToTree(QModelIndex(), factor);
+    renderWindow->Render();
+    scheduleVRSync();
+    emit statusUpdateMessage(
+        tr("Shrink (all parts): %1").arg(factor, 0, 'f', 2), 0);
+    return;
+  }
+
   QModelIndex index = ui->treeView->currentIndex();
   if (!index.isValid()) {
     emit statusUpdateMessage(
@@ -1148,9 +1217,6 @@ void MainWindow::onShrinkSliderChanged(int value) {
   if (!selectedPart)
     return;
 
-  /* Slider 0   -> factor 1.0 (no shrink).
-   * Slider 100 -> factor 0.0 (max shrink). */
-  double factor = (100.0 - value) / 100.0;
   selectedPart->setShrinkFactor(factor);
   renderWindow->Render();
   scheduleVRSync();
@@ -1159,6 +1225,16 @@ void MainWindow::onShrinkSliderChanged(int value) {
 }
 
 void MainWindow::onClipSliderChanged(int value) {
+  const bool applyToAll =
+      ui->applyAllClipCheckBox && ui->applyAllClipCheckBox->isChecked();
+  if (applyToAll) {
+    applyClipSliderToTree(QModelIndex(), value);
+    renderWindow->Render();
+    scheduleVRSync();
+    emit statusUpdateMessage(tr("Clip (all parts): slider=%1").arg(value), 0);
+    return;
+  }
+
   QModelIndex index = ui->treeView->currentIndex();
   if (!index.isValid()) {
     emit statusUpdateMessage(
@@ -1289,6 +1365,7 @@ void MainWindow::onToggleVRRotation() {
     /* Keep the toggle button visually consistent with the actual state. */
     ui->vrRotateButton->blockSignals(true);
     ui->vrRotateButton->setChecked(false);
+    ui->vrRotateButton->setText(tr("Start Rotation (R)"));
     ui->vrRotateButton->blockSignals(false);
     emit statusUpdateMessage(
         tr("Toggle VR Rotation: VR is not running."), 0);
@@ -1303,6 +1380,8 @@ void MainWindow::onToggleVRRotation() {
   /* Keep button state synced when triggered from menu / keyboard. */
   ui->vrRotateButton->blockSignals(true);
   ui->vrRotateButton->setChecked(vrRotating);
+  ui->vrRotateButton->setText(vrRotating ? tr("Stop Rotation (R)")
+                                         : tr("Start Rotation (R)"));
   ui->vrRotateButton->blockSignals(false);
 
   emit statusUpdateMessage(
@@ -1935,6 +2014,72 @@ void MainWindow::applyOpacityToTree(const QModelIndex &index,
   int rows = partList->rowCount(index);
   for (int i = 0; i < rows; ++i)
     applyOpacityToTree(partList->index(i, 0, index), opacity);
+}
+
+void MainWindow::applyColourToTree(const QModelIndex &index, unsigned char R,
+                                   unsigned char G, unsigned char B) {
+  if (index.isValid()) {
+    ModelPart *part = static_cast<ModelPart *>(index.internalPointer());
+    if (part && !part->getStlPath().isEmpty()) {
+      part->setColour(R, G, B);
+      if (part->getActor())
+        part->getActor()->GetProperty()->SetColor(R / 255.0, G / 255.0,
+                                                  B / 255.0);
+    }
+  }
+  int rows = partList->rowCount(index);
+  for (int i = 0; i < rows; ++i)
+    applyColourToTree(partList->index(i, 0, index), R, G, B);
+}
+
+void MainWindow::applyShrinkFactorToTree(const QModelIndex &index,
+                                         double factor) {
+  if (index.isValid()) {
+    ModelPart *part = static_cast<ModelPart *>(index.internalPointer());
+    if (part && !part->getStlPath().isEmpty())
+      part->setShrinkFactor(factor);
+  }
+  int rows = partList->rowCount(index);
+  for (int i = 0; i < rows; ++i)
+    applyShrinkFactorToTree(partList->index(i, 0, index), factor);
+}
+
+void MainWindow::applyClipSliderToTree(const QModelIndex &index,
+                                       int sliderValue) {
+  if (index.isValid()) {
+    ModelPart *part = static_cast<ModelPart *>(index.internalPointer());
+    if (part && !part->getStlPath().isEmpty() && part->getActor()) {
+      /* Each part has its own original X bounds, so we can't share one
+       * actualX value across the tree - recompute per-part exactly the
+       * way onClipSliderChanged does for a single part. */
+      double bounds[6];
+      part->getOriginalBounds(bounds);
+      double minX = bounds[0];
+      double maxX = bounds[1];
+      double width = maxX - minX;
+      double actualX;
+      if (sliderValue == 0)
+        actualX = minX - 0.1 * width;
+      else
+        actualX = minX + (double(sliderValue) / 100.0) * width;
+      part->applyClipping(actualX);
+    }
+  }
+  int rows = partList->rowCount(index);
+  for (int i = 0; i < rows; ++i)
+    applyClipSliderToTree(partList->index(i, 0, index), sliderValue);
+}
+
+void MainWindow::applyLightFactorToTree(const QModelIndex &index,
+                                        double factor) {
+  if (index.isValid()) {
+    ModelPart *part = static_cast<ModelPart *>(index.internalPointer());
+    if (part && !part->getStlPath().isEmpty())
+      part->setLightFactor(factor);
+  }
+  int rows = partList->rowCount(index);
+  for (int i = 0; i < rows; ++i)
+    applyLightFactorToTree(partList->index(i, 0, index), factor);
 }
 
 void MainWindow::onOpacitySliderChanged(int value) {
