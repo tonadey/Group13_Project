@@ -115,6 +115,14 @@ MainWindow::MainWindow(QWidget *parent)
           &MainWindow::onShrinkSliderChanged);
   connect(ui->clipSlider, &QSlider::valueChanged, this,
           &MainWindow::onClipSliderChanged);
+  /* Shrink and clip rebuild every leaf's VTK filter chain when the value
+   * changes. With a folder selected and thousands of leaves underneath,
+   * tracking made the slider fire 100x per drag and froze the renderer.
+   * Drop tracking so valueChanged only fires on release - the slider
+   * still moves visually during the drag, but the cascade applies once
+   * at the end. Light and opacity stay tracked; they're cheap. */
+  ui->shrinkSlider->setTracking(false);
+  ui->clipSlider->setTracking(false);
   /* Auto-sync VR after any change. The slider value handlers
    * (onShrinkSliderChanged etc.) call scheduleVRSync() at the end, so
    * every slider tick during a drag schedules a sync. The 100ms
