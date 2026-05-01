@@ -90,7 +90,12 @@ MainWindow::MainWindow(QWidget *parent)
   refreshWindowTitle();
 
   ui->actionOpen_Folder->setIcon(QIcon(":/Icons/icons/openfolder.png"));
+<<<<<<< HEAD
   ui->actionScreenshot->setIcon(QIcon(":/Icons/icons/screenshot.png"));
+=======
+ui->actionOpen_Folder->setIcon(QIcon(":/Icons/icons/openfolder.png"));
+
+>>>>>>> a4ac6b427cf88daa8061caeb5df9f3db24e40d3d
 
   /* Tree-side buttons */
   connect(ui->addItemButton, &QPushButton::released, this,
@@ -2631,4 +2636,3 @@ void MainWindow::onScreenshotClicked()
 
     emit statusUpdateMessage(tr("Screenshot saved: %1").arg(fileName), 0);
 }
-
